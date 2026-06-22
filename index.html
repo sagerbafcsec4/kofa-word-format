@@ -112,7 +112,7 @@
       <h1>Wordフォーマット自動作成</h1>
       <span class="sub">対戦名・チーム情報を差し込んで Word を一括生成</span>
     </div>
-    <span class="ver">v24 · 2026-06-20</span>
+    <span class="ver">v25 · 2026-06-20</span>
   </div>
   <div id="status"></div>
 
@@ -120,7 +120,7 @@
     <h2><span class="step">1</span> フォーマットベースを読み込む（.docx・複数可）</h2>
     <div class="drop" id="drop">
       ここに <b>.docx</b> をドラッグ＆ドロップ、またはクリックして選択<br>
-      <span class="hint">テンプレート内の <code>{{Home Team}}</code> / <code>{{Away Team}}</code> が置き換わります</span>
+      <span class="hint">テンプレート内の <code>{{HOME_TEAM}}</code> / <code>{{AWAY_TEAM}}</code> が置き換わります</span>
       <input type="file" id="fileInput" accept=".docx" multiple hidden>
     </div>
     <div class="tpl-list" id="tplList"></div>
@@ -173,9 +173,9 @@
       <label>ファイル名（デフォルト）</label>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         <select id="fnPreset" style="max-width:240px"></select>
-        <input id="fnPattern" value="{{Home Team}}対{{Away Team}}" style="flex:1;min-width:260px">
+        <input id="fnPattern" value="{{HOME_TEAM}}対{{AWAY_TEAM}}" style="flex:1;min-width:260px">
       </div>
-      <p class="hint"><code>{{Home Team}}</code> <code>{{Away Team}}</code> はチーム名に、<code>●</code> は節番号に置き換わります（拡張子 <code>.docx</code> は自動）。各対戦で個別に変えたい場合は、STEP3の各行「ファイル名」で選べます。</p>
+      <p class="hint"><code>{{HOME_TEAM}}</code> <code>{{AWAY_TEAM}}</code> はチーム名に、<code>●</code> は節番号に置き換わります（拡張子 <code>.docx</code> は自動）。各対戦で個別に変えたい場合は、STEP3の各行「ファイル名」で選べます。</p>
     </div>
     <div class="fld" style="margin:10px 0 4px;max-width:220px">
       <label>節番号（「第●節」の ●）</label>
@@ -211,9 +211,9 @@ let tplSeq = 0, infoSeq = 0, rowSeq = 0;
 
 /* ---------- ファイル名プリセット ---------- */
 const FN_PRESETS = [
-  { label:'標準（対戦名のみ）', value:'{{Home Team}}対{{Away Team}}' },
-  { label:'【前日分】ラ・リーガ', value:'【前日分】ラ・リーガ第●節_{{Home Team}}対{{Away Team}}' },
-  { label:'【当日分】ラ・リーガ', value:'【当日分】ラ・リーガ第●節_{{Home Team}}対{{Away Team}}' }
+  { label:'標準（対戦名のみ）', value:'{{HOME_TEAM}}対{{AWAY_TEAM}}' },
+  { label:'【前日分】ラ・リーガ', value:'【前日分】ラ・リーガ第●節_{{HOME_TEAM}}対{{AWAY_TEAM}}' },
+  { label:'【当日分】ラ・リーガ', value:'【当日分】ラ・リーガ第●節_{{HOME_TEAM}}対{{AWAY_TEAM}}' }
 ];
 function fnRowOptions(sel){
   let o='<option value="">（STEP4の設定）</option>';
@@ -341,7 +341,7 @@ $('#gen').onclick=async()=>{
   }
   if(!templates.length){ log('先にフォーマットベース(.docx)を読み込んでください','err'); return; }
   const dStart='{{', dEnd='}}';
-  const defaultPattern=$('#fnPattern').value||'{{Home Team}}対{{Away Team}}';
+  const defaultPattern=$('#fnPattern').value||'{{HOME_TEAM}}対{{AWAY_TEAM}}';
   const roundNo=($('#roundNo').value||'').trim();
   const rows=[...document.querySelectorAll('#rows tr')].map(tr=>({
     home:tr.querySelector('.home').value.trim(),
@@ -361,7 +361,7 @@ $('#gen').onclick=async()=>{
         delimiters:{start:dStart,end:dEnd}, paragraphLoop:true, linebreaks:true,
         nullGetter:(part)=>{ const v=part&&part.value; if(v==='HOME_INFO')return'[[HOME_INFO]]'; if(v==='AWAY_INFO')return'[[AWAY_INFO]]'; return ''; }
       });
-      doc.render({'Home Team':r.home,'Away Team':r.away});
+      doc.render({'Home Team':r.home,'Away Team':r.away,'HOME_TEAM':r.home,'AWAY_TEAM':r.away});
       let bytes=doc.getZip().generate({type:'uint8array'});
 
       // 2) チーム情報を該当位置に埋め込み（altChunk）
@@ -489,7 +489,7 @@ function uniqueNames(out){
   return res;
 }
 function applyRound(pattern,roundNo){ return roundNo ? pattern.replace(/●/g,roundNo) : pattern; }
-function fillName(pattern,r){ return sanitize(pattern.replace(/\{\{?\s*Home Team\s*\}?\}/g,r.home||'').replace(/\{\{?\s*Away Team\s*\}?\}/g,r.away||'')); }
+function fillName(pattern,r){ return sanitize(pattern.replace(/\{\{?\s*HOME[_ ]?TEAM\s*\}?\}/gi,r.home||'').replace(/\{\{?\s*AWAY[_ ]?TEAM\s*\}?\}/gi,r.away||'')); }
 function sanitize(s){ return s.replace(/[\\\/:*?"<>|]/g,'_').trim()||'output'; }
 function stamp(){ const d=new Date(),p=n=>String(n).padStart(2,'0');
   return `${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}`; }
