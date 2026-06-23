@@ -70,7 +70,7 @@
   .row-num{color:#9aa6b8;width:26px;text-align:center;font-size:12px}
 
   /* buttons */
-  .btn{border:none;border-radius:11px;padding:10px 17px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:7px;transition:.14s}
+  .btn{border:none;border-radius:11px;padding:10px 17px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;justify-content:center;gap:7px;transition:.14s}
   .btn.primary{background:var(--grad);color:#fff;box-shadow:0 8px 20px -8px rgba(43,87,154,.55)}
   .btn.primary:hover{filter:brightness(1.05);transform:translateY(-1px)}
   .btn.big{padding:14px 26px;font-size:15px;border-radius:13px}
@@ -100,6 +100,14 @@
   #log{font-size:12px;color:var(--sub);margin-top:12px;white-space:pre-wrap;line-height:1.7}
   .ok{color:#059669} .err{color:var(--danger)} .wn{color:var(--warn)}
   code{display:inline-block;background:#eef0f6;border:1px solid var(--line);border-radius:6px;padding:2px 7px 4px;color:#1e3a66;font-size:13px;font-weight:600;line-height:1.5;letter-spacing:.2px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;white-space:nowrap}
+  .tabs{display:flex;gap:8px;margin:2px 0 18px;flex-wrap:wrap}
+  .tab{border:1px solid var(--line);background:#fff;color:#475569;border-radius:999px;padding:8px 18px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;transition:.14s}
+  .tab:hover{border-color:var(--accent);color:var(--accent)}
+  .tab.active{background:var(--grad);color:#fff;border-color:transparent;box-shadow:0 6px 16px -8px rgba(43,87,154,.55)}
+  .tabpane[hidden]{display:none}
+  .phtable{width:100%;border-collapse:separate;border-spacing:0 8px}
+  .phtable td{padding:5px 10px;vertical-align:middle;font-size:13px;color:#334155}
+  .phtable td:first-child{width:210px;white-space:nowrap}
 </style>
 </head>
 <body>
@@ -116,15 +124,20 @@
       <h1>Wordフォーマット自動作成</h1>
       <span class="sub">対戦名・チーム情報を差し込んで Word を一括生成</span>
     </div>
-    <span class="ver">v30 · 2026-06-20</span>
+    <span class="ver">v31 · 2026-06-20</span>
   </div>
   <div id="status"></div>
+
+  <div class="tabs">
+    <button class="tab active" data-tab="make">フォーマット作成</button>
+    <button class="tab" data-tab="ph">プレースホルダ</button>
+  </div>
+  <div id="tab-make" class="tabpane">
 
   <div class="card">
     <h2><span class="step">1</span> フォーマットベースを読み込む（.docx・複数可）</h2>
     <div class="drop" id="drop">
-      ここに <b>.docx</b> をドラッグ＆ドロップ、またはクリックして選択<br>
-      <span class="hint">テンプレート内の <code>{{HOME_TEAM}}</code> / <code>{{AWAY_TEAM}}</code> が置き換わります</span>
+      ここに <b>.docx</b> をドラッグ＆ドロップ、またはクリックして選択
       <input type="file" id="fileInput" accept=".docx" multiple hidden>
     </div>
     <div class="tpl-list" id="tplList"></div>
@@ -137,7 +150,6 @@
       <div class="fld"><label>大会名</label><input id="cmnComp" placeholder="UEFAチャンピオンズリーグ など"></div>
       <div class="fld"><label>第●節</label><input id="cmnMatchday" placeholder="第●節 / MD● / 準々決勝1stleg"></div>
     </div>
-    <p class="hint">テンプレートやファイル名で <code>{{SEASON}}</code> <code>{{COMPETITION}}</code> <code>{{MATCHDAY}}</code> として差し込めます。</p>
   </div>
 
   <div class="card">
@@ -148,10 +160,6 @@
       <input type="file" id="infoInput" accept=".docx" multiple hidden>
     </div>
     <div class="tpl-list" id="infoList"></div>
-    <div class="note">
-      <b>フォーマットベース側の準備</b>：チーム情報を入れたい位置に、目印として
-      <code>{{HOME_INFO}}</code>（ホーム用）・<code>{{AWAY_INFO}}</code>（アウェイ用）の行を入れておいてください。生成時にその行が、該当クラブのチーム情報まるごとに置き換わります（画像・表・書式そのまま）。
-    </div>
   </div>
 
   <div class="card">
@@ -189,7 +197,7 @@
         <select id="fnPreset" style="max-width:240px"></select>
         <input id="fnPattern" value="{{HOME_TEAM}}対{{AWAY_TEAM}}" style="flex:1;min-width:260px">
       </div>
-      <p class="hint"><code>{{HOME_TEAM}}</code> <code>{{AWAY_TEAM}}</code> <code>{{SEASON}}</code> <code>{{COMPETITION}}</code> <code>{{MATCHDAY}}</code> が差し込まれます（拡張子 <code>.docx</code> は自動）。各対戦で個別に変えたい場合は、STEP4の各行「ファイル名」で選べます。</p>
+      <p class="hint">使える記法は「プレースホルダ」タブ参照（拡張子 <code>.docx</code> は自動）。各対戦で個別に変える場合は、STEP4の各行「ファイル名」で選べます。</p>
     </div>
     <div class="savebar">
       <button class="btn primary big" id="genFolder">フォルダを選んで個別に保存</button>
@@ -197,6 +205,29 @@
     </div>
     <p class="hint">※「フォルダを選んで個別に保存」は、保存先フォルダを選ぶと各試合を1ファイルずつ書き出します（Chrome・Edge推奨）。1試合のときはそのまま保存されます。「ZIPにまとめて保存」はどこでも保存でき、あとで展開します。</p>
     <div id="log"></div>
+  </div>
+  </div>
+
+  <div id="tab-ph" class="tabpane" hidden>
+    <div class="card">
+      <h2>差し込みプレースホルダ</h2>
+      <p class="hint">フォーマットベースの本文や「ファイル名の書式」に次の記法を書いておくと、生成時に自動で置き換わります。</p>
+      <table class="phtable">
+        <tr><td><code>{{HOME_TEAM}}</code></td><td>ホームチーム名</td></tr>
+        <tr><td><code>{{AWAY_TEAM}}</code></td><td>アウェイチーム名</td></tr>
+        <tr><td><code>{{SEASON}}</code></td><td>シーズン（共通設定で入力）</td></tr>
+        <tr><td><code>{{COMPETITION}}</code></td><td>大会名（共通設定で入力）</td></tr>
+        <tr><td><code>{{MATCHDAY}}</code></td><td>第●節（共通設定で入力）</td></tr>
+      </table>
+    </div>
+    <div class="card">
+      <h2>チーム情報の埋め込み</h2>
+      <p class="hint">フォーマットベースに、チーム情報を入れたい位置の目印として次の行を入れておきます。生成時にその行が、該当クラブの「チーム情報.docx」まるごとに置き換わります（画像・表・書式そのまま）。</p>
+      <table class="phtable">
+        <tr><td><code>{{HOME_INFO}}</code></td><td>ホームのチーム情報を差し込む位置</td></tr>
+        <tr><td><code>{{AWAY_INFO}}</code></td><td>アウェイのチーム情報を差し込む位置</td></tr>
+      </table>
+    </div>
   </div>
 </div>
 
@@ -516,6 +547,16 @@ addRow();
 if('serviceWorker' in navigator && location.protocol.startsWith('http')){
   window.addEventListener('load',function(){ navigator.serviceWorker.register('sw.js').catch(function(){}); });
 }
+
+/* ---------- タブ切替 ---------- */
+document.querySelectorAll('.tab').forEach(function(t){
+  t.addEventListener('click',function(){
+    document.querySelectorAll('.tab').forEach(function(x){ x.classList.toggle('active', x===t); });
+    const id=t.dataset.tab, mk=document.getElementById('tab-make'), ph=document.getElementById('tab-ph');
+    if(mk) mk.hidden=(id!=='make'); if(ph) ph.hidden=(id!=='ph');
+    window.scrollTo({top:0,behavior:'smooth'});
+  });
+});
 
 </script>
 </body>
