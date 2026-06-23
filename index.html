@@ -124,7 +124,7 @@
       <h1>Wordフォーマット自動作成</h1>
       <span class="sub">対戦名・チーム情報を差し込んで Word を一括生成</span>
     </div>
-    <span class="ver">v33 · 2026-06-20</span>
+    <span class="ver">v34 · 2026-06-20</span>
   </div>
   <div id="status"></div>
 
@@ -163,7 +163,17 @@
   </div>
 
   <div class="card">
-    <h2><span class="step">4</span> 対戦リスト（何試合でも）</h2>
+    <h2><span class="step">4</span> スタジアム情報ファイルを読み込む（任意・.docx・複数可）</h2>
+    <div class="drop" id="dropStad">
+      ここに <b>スタジアム名.docx</b> をドラッグ＆ドロップ（複数可）<br>
+      <span class="hint">ホームチーム名 →（teams シート参照）→ ホームスタジアム名 で自動照合</span>
+      <input type="file" id="stadInput" accept=".docx" multiple hidden>
+    </div>
+    <div class="tpl-list" id="stadList"></div>
+  </div>
+
+  <div class="card">
+    <h2><span class="step">5</span> 対戦リスト（何試合でも）</h2>
     <div class="fld" style="margin:2px 0 16px">
       <label>ファイル名の書式（既定）</label>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
@@ -198,7 +208,7 @@
   </div>
 
   <div class="card">
-    <h2><span class="step">5</span> 生成する</h2>
+    <h2><span class="step">6</span> 生成する</h2>
     <div class="savebar">
       <button class="btn primary big" id="genFolder">フォルダを選んで個別に保存</button>
       <button class="btn outline big" id="genZip">ZIPにまとめて保存</button>
@@ -226,6 +236,7 @@
       <table class="phtable">
         <tr><td><code>{{HOME_INFO}}</code></td><td>ホームのチーム情報を差し込む位置</td></tr>
         <tr><td><code>{{AWAY_INFO}}</code></td><td>アウェイのチーム情報を差し込む位置</td></tr>
+        <tr><td><code>{{STADIUM_INFO}}</code></td><td>ホームのスタジアム情報を差し込む位置（チーム名→teamsシート→スタジアム名で自動照合）</td></tr>
       </table>
     </div>
   </div>
@@ -328,6 +339,52 @@ function findInfo(teamName){
   return hit||null;
 }
 
+/* ---------- stadium info files + teams sheet ---------- */
+const stadInfos = []; let stadSeq=0;
+const TEAMS_CSV='https://docs.google.com/spreadsheets/d/e/2PACX-1vRfxZY4XyfVh5oL7Fk8nTF1wdhDdzcscTlL1ZTVpu2P2hJ_kg-abbu4HFziWrgkRRuTL-Q_TLxzFrlc/pub?output=csv';
+let teamsMap=null;
+const teamsReady=loadTeams();
+function normKey(s){ return String(s||'').replace(/\s+/g,'').replace(/[・･]/g,'').toLowerCase(); }
+function stadFileKey(name){ return normKey(name.replace(/\.docx$/i,'').replace(/情報$/,'')); }
+function splitCsv(line){ const out=[]; let cur='',q=false; for(let i=0;i<line.length;i++){ const ch=line[i];
+  if(q){ if(ch==='"'){ if(line[i+1]==='"'){cur+='"';i++;} else q=false; } else cur+=ch; }
+  else{ if(ch===','){out.push(cur);cur='';} else if(ch==='"'){q=true;} else cur+=ch; } }
+  out.push(cur); return out; }
+async function loadTeams(){
+  try{ const r=await fetch(TEAMS_CSV); const t=await r.text();
+    const rows=t.split(/\r?\n/).filter(x=>x.trim().length); const head=splitCsv(rows[0]);
+    const iT=head.indexOf('チーム名'), i1=head.indexOf('ホームスタジアム①'), i2=head.indexOf('ホームスタジアム②');
+    const map={};
+    for(let r2=1;r2<rows.length;r2++){ const c=splitCsv(rows[r2]); const tn=(c[iT]||'').trim(); if(!tn) continue;
+      map[normKey(tn)]={ s1:(c[i1]||'').trim(), s2:(i2>=0?(c[i2]||'').trim():'') }; }
+    teamsMap=map; return map;
+  }catch(e){ teamsMap={}; return teamsMap; }
+}
+wireDrop('#dropStad','#stadInput', list=>{
+  [...list].forEach(f=>{
+    if(!f.name.toLowerCase().endsWith('.docx')){ log(`「${f.name}」は .docx ではないためスキップ`,'wn'); return; }
+    const r=new FileReader();
+    r.onload=e=>{ stadInfos.push({id:++stadSeq,name:f.name,key:stadFileKey(f.name),buf:e.target.result}); renderStads(); };
+    r.readAsArrayBuffer(f);
+  });
+});
+function renderStads(){
+  const box=$('#stadList'); if(!box) return; box.innerHTML='';
+  stadInfos.forEach(t=>{
+    const d=document.createElement('div'); d.className='tpl';
+    d.innerHTML=`<span class="ic">🏟️</span><span class="nm">${esc(t.name)}</span><span class="tag">${esc(t.key)}</span><button class="x" title="削除">✕</button>`;
+    d.querySelector('.x').onclick=()=>{ const i=stadInfos.findIndex(x=>x.id===t.id); stadInfos.splice(i,1); renderStads(); };
+    box.appendChild(d);
+  });
+}
+function findStadium(homeName){
+  if(!teamsMap) return null;
+  const e=teamsMap[normKey(homeName)]; if(!e) return null;
+  for(const cand of [e.s1,e.s2]){ if(!cand) continue;
+    const hit=stadInfos.find(t=>t.key===normKey(cand)); if(hit) return hit; }
+  return null;
+}
+
 /* ---------- match rows ---------- */
 function addRow(home='',away='',tplId,fnSel='',fnText='',afterTr=null){
   const tr=document.createElement('tr'); tr.dataset.id=++rowSeq;
@@ -393,27 +450,30 @@ async function generate(saveMode){
   if(!rows.length){ log('対戦を1件以上入力してください','err'); return; }
 
   setGenDisabled(true);
+  await teamsReady;
   const out=[]; let ok=0;
   for(const r of rows){
     const tpl=templates.find(t=>t.id===r.tplId)||templates[0];
     try{
       const doc=new docxtemplater(new PizZip(tpl.buf),{
         delimiters:{start:dStart,end:dEnd}, paragraphLoop:true, linebreaks:true,
-        nullGetter:(part)=>{ const v=part&&part.value; if(v==='HOME_INFO')return'[[HOME_INFO]]'; if(v==='AWAY_INFO')return'[[AWAY_INFO]]'; return ''; }
+        nullGetter:(part)=>{ const v=part&&part.value; if(v==='HOME_INFO')return'[[HOME_INFO]]'; if(v==='AWAY_INFO')return'[[AWAY_INFO]]'; if(v==='STADIUM_INFO')return'[[STADIUM_INFO]]'; return ''; }
       });
       doc.render({'Home Team':r.home,'Away Team':r.away,'HOME_TEAM':r.home,'AWAY_TEAM':r.away,'SEASON':cm.season,'COMPETITION':cm.comp,'MATCHDAY':cm.matchday});
       let bytes=doc.getZip().generate({type:'uint8array'});
       const inserts=[];
-      const hInfo=findInfo(r.home), aInfo=findInfo(r.away);
+      const hInfo=findInfo(r.home), aInfo=findInfo(r.away), sInfo=findStadium(r.home);
       if(hInfo) inserts.push({marker:'[[HOME_INFO]]', data:hInfo.buf});
       if(aInfo) inserts.push({marker:'[[AWAY_INFO]]', data:aInfo.buf});
+      if(sInfo) inserts.push({marker:'[[STADIUM_INFO]]', data:sInfo.buf});
       bytes=altChunkMerge(bytes, inserts);
-      bytes=stripMarkers(bytes, ['[[HOME_INFO]]','[[AWAY_INFO]]']);
+      bytes=stripMarkers(bytes, ['[[HOME_INFO]]','[[AWAY_INFO]]','[[STADIUM_INFO]]']);
       out.push({fname:fillName(r.fn||defaultPattern, r, cm)+'.docx', data:bytes}); ok++;
       const tags=[];
       if(hInfo) tags.push('Home: '+hInfo.name); else if(r.home) tags.push('Home情報なし');
       if(aInfo) tags.push('Away: '+aInfo.name); else if(r.away) tags.push('Away情報なし');
-      log(`✔ ${out[out.length-1].fname}（${tpl.name}）${tags.length?' / '+tags.join(' , '):''}`, (hInfo||aInfo)?'ok':'wn');
+      if(sInfo) tags.push('Stadium: '+sInfo.name);
+      log(`✔ ${out[out.length-1].fname}（${tpl.name}）${tags.length?' / '+tags.join(' , '):''}`, (hInfo||aInfo||sInfo)?'ok':'wn');
     }catch(err){ log(`✘ ${r.home}対${r.away}：${(err&&err.message)||err}`,'err'); }
   }
   if(out.length){
