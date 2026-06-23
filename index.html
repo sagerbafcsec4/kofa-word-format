@@ -108,6 +108,12 @@
   .phtable{width:100%;border-collapse:separate;border-spacing:0 8px}
   .phtable td{padding:5px 10px;vertical-align:middle;font-size:13px;color:#334155}
   .phtable td:first-child{width:210px;white-space:nowrap}
+  .teams-tools{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:12px 0 14px}
+  .teamwrap{max-height:62vh;overflow:auto;border:1px solid var(--line);border-radius:12px}
+  .teamtbl{width:100%;border-collapse:collapse;font-size:13px}
+  .teamtbl thead th{position:sticky;top:0;background:#eef4fb;color:#475569;font-weight:600;text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);font-size:12px;white-space:nowrap}
+  .teamtbl td{padding:8px 12px;border-bottom:1px solid var(--line2);color:#334155;white-space:nowrap}
+  .teamtbl tr:hover td{background:#f6faff}
 </style>
 </head>
 <body>
@@ -124,12 +130,13 @@
       <h1>Wordフォーマット自動作成</h1>
       <span class="sub">対戦名・チーム情報を差し込んで Word を一括生成</span>
     </div>
-    <span class="ver">v34 · 2026-06-20</span>
+    <span class="ver">v35 · 2026-06-20</span>
   </div>
   <div id="status"></div>
 
   <div class="tabs">
     <button class="tab active" data-tab="make">フォーマット作成</button>
+    <button class="tab" data-tab="teams">チーム一覧</button>
     <button class="tab" data-tab="ph">プレースホルダ</button>
   </div>
   <div id="tab-make" class="tabpane">
@@ -216,6 +223,21 @@
     <p class="hint">※「フォルダを選んで個別に保存」は、保存先フォルダを選ぶと各試合を1ファイルずつ書き出します（Chrome・Edge推奨）。1試合のときはそのまま保存されます。「ZIPにまとめて保存」はどこでも保存でき、あとで展開します。</p>
     <div id="log"></div>
   </div>
+  </div>
+
+  <div id="tab-teams" class="tabpane" hidden>
+    <div class="card">
+      <h2>チーム一覧（共有シート）</h2>
+      <p class="hint">この一覧は共有スプレッドシートから読み込まれます（閲覧専用）。対戦リストのホームチーム名がここの「チーム名」と一致すると、スタジアム情報の自動照合に使われます。追加・修正は管理者がスプレッドシートで行ってください。</p>
+      <div class="teams-tools">
+        <a class="btn ghost" href="https://docs.google.com/spreadsheets/u/1/d/e/2PACX-1vRfxZY4XyfVh5oL7Fk8nTF1wdhDdzcscTlL1ZTVpu2P2hJ_kg-abbu4HFziWrgkRRuTL-Q_TLxzFrlc/pubhtml" target="_blank" rel="noopener">共有シートを開く（閲覧）</a>
+        <input id="teamSearch" placeholder="🔍 チーム名で検索" style="max-width:320px">
+      </div>
+      <div class="teamwrap"><table class="teamtbl">
+        <thead><tr><th>チーム名</th><th>国</th><th>都市</th><th>ホームスタジアム①</th><th>ホームスタジアム②</th></tr></thead>
+        <tbody id="teamsTbody"><tr><td colspan="5" style="padding:14px;color:#94a3b8">読み込み中…</td></tr></tbody>
+      </table></div>
+    </div>
   </div>
 
   <div id="tab-ph" class="tabpane" hidden>
@@ -342,7 +364,7 @@ function findInfo(teamName){
 /* ---------- stadium info files + teams sheet ---------- */
 const stadInfos = []; let stadSeq=0;
 const TEAMS_CSV='https://docs.google.com/spreadsheets/d/e/2PACX-1vRfxZY4XyfVh5oL7Fk8nTF1wdhDdzcscTlL1ZTVpu2P2hJ_kg-abbu4HFziWrgkRRuTL-Q_TLxzFrlc/pub?output=csv';
-let teamsMap=null;
+let teamsMap=null; const teamsRows=[];
 const teamsReady=loadTeams();
 function normKey(s){ return String(s||'').replace(/\s+/g,'').replace(/[・･]/g,'').toLowerCase(); }
 function stadFileKey(name){ return normKey(name.replace(/\.docx$/i,'').replace(/情報$/,'')); }
@@ -353,12 +375,22 @@ function splitCsv(line){ const out=[]; let cur='',q=false; for(let i=0;i<line.le
 async function loadTeams(){
   try{ const r=await fetch(TEAMS_CSV); const t=await r.text();
     const rows=t.split(/\r?\n/).filter(x=>x.trim().length); const head=splitCsv(rows[0]);
-    const iT=head.indexOf('チーム名'), i1=head.indexOf('ホームスタジアム①'), i2=head.indexOf('ホームスタジアム②');
-    const map={};
+    const iT=head.indexOf('チーム名'), iC=head.indexOf('国'), iCt=head.indexOf('都市'), i1=head.indexOf('ホームスタジアム①'), i2=head.indexOf('ホームスタジアム②');
+    const map={}; teamsRows.length=0;
     for(let r2=1;r2<rows.length;r2++){ const c=splitCsv(rows[r2]); const tn=(c[iT]||'').trim(); if(!tn) continue;
-      map[normKey(tn)]={ s1:(c[i1]||'').trim(), s2:(i2>=0?(c[i2]||'').trim():'') }; }
-    teamsMap=map; return map;
-  }catch(e){ teamsMap={}; return teamsMap; }
+      const s1=(c[i1]||'').trim(), s2=(i2>=0?(c[i2]||'').trim():'');
+      map[normKey(tn)]={ s1, s2 };
+      teamsRows.push({ team:tn, country:(iC>=0?(c[iC]||'').trim():''), city:(iCt>=0?(c[iCt]||'').trim():''), s1, s2 });
+    }
+    teamsMap=map; renderTeams(''); return map;
+  }catch(e){ teamsMap={}; const tb=document.getElementById('teamsTbody'); if(tb) tb.innerHTML='<tr><td colspan="5" style="padding:14px;color:#94a3b8">共有シートを読み込めませんでした（ネットワークをご確認ください）</td></tr>'; return teamsMap; }
+}
+function renderTeams(filter){
+  const tb=document.getElementById('teamsTbody'); if(!tb) return;
+  const f=normKey(filter||'');
+  const rows=teamsRows.filter(r=>!f||normKey(r.team).includes(f));
+  tb.innerHTML = rows.length ? rows.map(r=>`<tr><td>${esc(r.team)}</td><td>${esc(r.country)}</td><td>${esc(r.city)}</td><td>${esc(r.s1)}</td><td>${esc(r.s2)}</td></tr>`).join('')
+    : '<tr><td colspan="5" style="padding:14px;color:#94a3b8">該当なし</td></tr>';
 }
 wireDrop('#dropStad','#stadInput', list=>{
   [...list].forEach(f=>{
@@ -617,11 +649,13 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http')){
 document.querySelectorAll('.tab').forEach(function(t){
   t.addEventListener('click',function(){
     document.querySelectorAll('.tab').forEach(function(x){ x.classList.toggle('active', x===t); });
-    const id=t.dataset.tab, mk=document.getElementById('tab-make'), ph=document.getElementById('tab-ph');
-    if(mk) mk.hidden=(id!=='make'); if(ph) ph.hidden=(id!=='ph');
+    const id=t.dataset.tab;
+    ['make','teams','ph'].forEach(function(p){ const el=document.getElementById('tab-'+p); if(el) el.hidden=(p!==id); });
+    if(id==='teams') renderTeams((document.getElementById('teamSearch')||{}).value||'');
     window.scrollTo({top:0,behavior:'smooth'});
   });
 });
+(function(){ const ts=document.getElementById('teamSearch'); if(ts) ts.addEventListener('input',function(){ renderTeams(ts.value); }); })();
 
 </script>
 </body>
