@@ -114,6 +114,21 @@
   .teamtbl thead th{position:sticky;top:0;background:#eef4fb;color:#475569;font-weight:600;text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);font-size:12px;white-space:nowrap}
   .teamtbl td{padding:8px 12px;border-bottom:1px solid var(--line2);color:#334155;white-space:nowrap}
   .teamtbl tr:hover td{background:#f6faff}
+
+  /* ===== 対戦リスト（Excel版と同じ枠つきグリッド／文字が切れない） ===== */
+  .matchwrap{overflow-x:auto;overflow-y:visible;border:1px solid var(--line);border-radius:12px;margin-top:4px;background:#fff}
+  .matchtbl{width:100%;min-width:860px;border-collapse:collapse;border-spacing:0;font-size:13px;margin:0}
+  .matchtbl th{background:#eef4fb;color:#475569;font-weight:600;text-align:left;font-size:12px;padding:9px 10px;border:1px solid var(--line);white-space:nowrap;position:sticky;top:0;z-index:1}
+  .matchtbl td{padding:6px 8px;border:1px solid var(--line);vertical-align:middle}
+  .matchtbl td input,.matchtbl td select{width:100%;padding:8px 9px;font-size:13px;border:1px solid #dfe3ec;border-radius:8px;background:#fff;text-overflow:clip}
+  .matchtbl td input:focus,.matchtbl td select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(43,87,154,.16)}
+  .matchtbl td.row-num{width:34px;text-align:center;color:#9aa6b8;font-size:12px;background:#fafbfe;font-weight:600}
+  .matchtbl td.vs{width:34px;text-align:center;color:var(--sub);font-weight:600;background:#fafbfe}
+  .matchtbl .home,.matchtbl .away{min-width:170px}
+  .matchtbl .rowtpl{min-width:160px}
+  .matchtbl .rowfnText{min-width:180px}
+  .matchtbl td.del{white-space:nowrap;text-align:right;width:auto}
+  .matchtbl col{}
 </style>
 </head>
 <body>
@@ -130,7 +145,7 @@
       <h1>Wordフォーマット自動作成</h1>
       <span class="sub">対戦名・チーム情報を差し込んで Word を一括生成</span>
     </div>
-    <span class="ver">v40 · 2026-06-20</span>
+    <span class="ver">v41 · 2026-06-20</span>
   </div>
   <div id="status"></div>
 
@@ -189,12 +204,14 @@
       </div>
       <p class="hint">この書式が全試合に使われます。特定の試合だけ変えたいときは、その行の「ファイル名」でプリセットを選ぶか「✏ カスタム…」で自由入力できます。記法は「プレースホルダ」タブ参照（拡張子 <code>.docx</code> は自動）。</p>
     </div>
-    <table>
-      <thead>
-        <tr><th></th><th>Home Team（ホーム）</th><th></th><th>Away Team（アウェイ）</th><th>使用テンプレート</th><th>ファイル名</th><th></th></tr>
-      </thead>
-      <tbody id="rows"></tbody>
-    </table>
+    <div class="matchwrap">
+      <table class="matchtbl">
+        <thead>
+          <tr><th>#</th><th>Home Team（ホーム）</th><th></th><th>Away Team（アウェイ）</th><th>使用テンプレート</th><th>ファイル名</th><th></th></tr>
+        </thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
     <div class="toolbar">
       <button class="btn ghost" id="addRow">＋ 行を追加</button>
       <button class="btn ghost" id="clearRows">クリア</button>
