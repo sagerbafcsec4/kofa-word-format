@@ -130,7 +130,7 @@
       <h1>Wordフォーマット自動作成</h1>
       <span class="sub">対戦名・チーム情報を差し込んで Word を一括生成</span>
     </div>
-    <span class="ver">v36 · 2026-06-20</span>
+    <span class="ver">v37 · 2026-06-20</span>
   </div>
   <div id="status"></div>
 
@@ -427,7 +427,7 @@ function addRow(home='',away='',tplId,fnSel='',fnText='',afterTr=null){
     <td><input class="away" placeholder="アウェイチーム名" value="${esc(away)}"></td>
     <td><select class="rowtpl">${tplOptions(tplId||(templates[0]&&templates[0].id))}</select></td>
     <td><select class="rowfn">${fnRowOptions(fnSel)}</select><input class="rowfnText" placeholder="このファイルだけの名前" value="${esc(fnText)}" style="${fnSel==='__custom__'?'':'display:none;'}margin-top:5px"></td>
-    <td class="del"><button class="dup" title="この対戦を複製">複製</button><button class="swp" title="ホーム・アウェイを逆にした行を追加">逆で追加</button><button class="x" title="削除">✕</button></td>`;
+    <td class="del"><button class="dup" title="この対戦を複製">複製</button><button class="swp" title="ホーム・アウェイを逆にした行を追加">HA逆</button><button class="x" title="削除">✕</button></td>`;
   const selEl=tr.querySelector('.rowfn'), txtEl=tr.querySelector('.rowfnText');
   selEl.addEventListener('change',()=>{
     const c=selEl.value==='__custom__';
