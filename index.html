@@ -115,20 +115,22 @@
   .teamtbl td{padding:8px 12px;border-bottom:1px solid var(--line2);color:#334155;white-space:nowrap}
   .teamtbl tr:hover td{background:#f6faff}
 
-  /* ===== 対戦リスト（Excel版と同じ枠つきグリッド／文字が切れない） ===== */
-  .matchwrap{overflow-x:auto;overflow-y:visible;border:1px solid var(--line);border-radius:12px;margin-top:4px;background:#fff}
-  .matchtbl{width:100%;min-width:860px;border-collapse:collapse;border-spacing:0;font-size:13px;margin:0}
-  .matchtbl th{background:#eef4fb;color:#475569;font-weight:600;text-align:left;font-size:12px;padding:9px 10px;border:1px solid var(--line);white-space:nowrap;position:sticky;top:0;z-index:1}
-  .matchtbl td{padding:6px 8px;border:1px solid var(--line);vertical-align:middle}
-  .matchtbl td input,.matchtbl td select{width:100%;padding:8px 9px;font-size:13px;border:1px solid #dfe3ec;border-radius:8px;background:#fff;text-overflow:clip}
-  .matchtbl td input:focus,.matchtbl td select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(43,87,154,.16)}
-  .matchtbl td.row-num{width:34px;text-align:center;color:#9aa6b8;font-size:12px;background:#fafbfe;font-weight:600}
-  .matchtbl td.vs{width:34px;text-align:center;color:var(--sub);font-weight:600;background:#fafbfe}
-  .matchtbl .home,.matchtbl .away{min-width:170px}
-  .matchtbl .rowtpl{min-width:160px}
-  .matchtbl .rowfnText{min-width:180px}
-  .matchtbl td.del{white-space:nowrap;text-align:right;width:auto}
-  .matchtbl col{}
+  /* ===== 対戦リスト：Excel版と同じ2段カード（文字が切れない） ===== */
+  .matchlist{display:flex;flex-direction:column;gap:12px;margin-top:4px}
+  .mcard{border:1px solid var(--line);border-radius:12px;background:#fcfdfe;padding:12px 14px}
+  .mtop{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .mnum{flex:0 0 auto;width:26px;height:26px;border-radius:50%;background:var(--grad);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;box-shadow:0 4px 10px -3px rgba(43,87,154,.45)}
+  .mteam{flex:1 1 200px;min-width:150px}
+  .mteam input{width:100%}
+  .mvs{flex:0 0 auto;color:var(--sub);font-weight:600;padding:0 2px}
+  .mbtns{flex:0 0 auto;display:flex;gap:6px;align-items:center;margin-left:auto}
+  .mbot{display:flex;gap:10px 16px;align-items:flex-end;flex-wrap:wrap;margin-top:12px}
+  .mfield{display:flex;flex-direction:column;gap:5px}
+  .mfield label{font-size:12px;color:var(--sub);font-weight:600}
+  .mfield.mtpl{flex:0 1 240px;min-width:180px}
+  .mfield.mfile{flex:1 1 300px;min-width:220px}
+  .mfield select,.mfield input{width:100%}
+  .mfilewrap{display:flex;flex-direction:column;gap:6px}
 </style>
 </head>
 <body>
@@ -145,7 +147,7 @@
       <h1>Wordフォーマット自動作成</h1>
       <span class="sub">対戦名・チーム情報を差し込んで Word を一括生成</span>
     </div>
-    <span class="ver">v41 · 2026-06-20</span>
+    <span class="ver">v42 · 2026-06-20</span>
   </div>
   <div id="status"></div>
 
@@ -204,14 +206,7 @@
       </div>
       <p class="hint">この書式が全試合に使われます。特定の試合だけ変えたいときは、その行の「ファイル名」でプリセットを選ぶか「✏ カスタム…」で自由入力できます。記法は「プレースホルダ」タブ参照（拡張子 <code>.docx</code> は自動）。</p>
     </div>
-    <div class="matchwrap">
-      <table class="matchtbl">
-        <thead>
-          <tr><th>#</th><th>Home Team（ホーム）</th><th></th><th>Away Team（アウェイ）</th><th>使用テンプレート</th><th>ファイル名</th><th></th></tr>
-        </thead>
-        <tbody id="rows"></tbody>
-      </table>
-    </div>
+    <div id="rows" class="matchlist"></div>
     <div class="toolbar">
       <button class="btn ghost" id="addRow">＋ 行を追加</button>
       <button class="btn ghost" id="clearRows">クリア</button>
@@ -437,15 +432,19 @@ function findStadium(homeName){
 
 /* ---------- match rows ---------- */
 function addRow(home='',away='',tplId,fnSel='',fnText='',afterTr=null){
-  const tr=document.createElement('tr'); tr.dataset.id=++rowSeq;
+  const tr=document.createElement('div'); tr.className='mcard'; tr.dataset.id=++rowSeq;
   tr.innerHTML=`
-    <td class="row-num"></td>
-    <td><input class="home" placeholder="ホームチーム名" value="${esc(home)}"></td>
-    <td class="vs">対</td>
-    <td><input class="away" placeholder="アウェイチーム名" value="${esc(away)}"></td>
-    <td><select class="rowtpl">${tplOptions(tplId||(templates[0]&&templates[0].id))}</select></td>
-    <td><select class="rowfn">${fnRowOptions(fnSel)}</select><input class="rowfnText" placeholder="このファイルだけの名前" value="${esc(fnText)}" style="${fnSel==='__custom__'?'':'display:none;'}margin-top:5px"></td>
-    <td class="del"><button class="dup" title="この対戦を複製">複製</button><button class="swp" title="ホーム・アウェイを逆にした行を追加">HA逆</button><button class="x" title="削除">✕</button></td>`;
+    <div class="mtop">
+      <span class="mnum row-num"></span>
+      <div class="mteam"><input class="home" placeholder="ホームチーム名" value="${esc(home)}"></div>
+      <span class="mvs">対</span>
+      <div class="mteam"><input class="away" placeholder="アウェイチーム名" value="${esc(away)}"></div>
+      <div class="mbtns"><button class="dup" title="この対戦を複製">複製</button><button class="swp" title="ホーム・アウェイを逆にした行を追加">HA逆</button><button class="x" title="削除">✕</button></div>
+    </div>
+    <div class="mbot">
+      <div class="mfield mtpl"><label>使用テンプレート</label><select class="rowtpl">${tplOptions(tplId||(templates[0]&&templates[0].id))}</select></div>
+      <div class="mfield mfile"><label>ファイル名</label><div class="mfilewrap"><select class="rowfn">${fnRowOptions(fnSel)}</select><input class="rowfnText" placeholder="このファイルだけの名前" value="${esc(fnText)}" style="${fnSel==='__custom__'?'':'display:none;'}"></div></div>
+    </div>`;
   const selEl=tr.querySelector('.rowfn'), txtEl=tr.querySelector('.rowfnText');
   selEl.addEventListener('change',()=>{
     const c=selEl.value==='__custom__';
@@ -463,8 +462,8 @@ function addRow(home='',away='',tplId,fnSel='',fnText='',afterTr=null){
   renumber();
 }
 function renumber(){
-  document.querySelectorAll('#rows tr').forEach((tr,i)=>tr.querySelector('.row-num').textContent=i+1);
-  if(!document.querySelector('#rows tr')) addRow();
+  document.querySelectorAll('#rows .mcard').forEach((tr,i)=>tr.querySelector('.row-num').textContent=i+1);
+  if(!document.querySelector('#rows .mcard')) addRow();
 }
 $('#addRow').onclick=()=>addRow();
 $('#clearRows').onclick=()=>{ $('#rows').innerHTML=''; addRow(); };
@@ -491,7 +490,7 @@ async function generate(saveMode){
   const dStart='{{', dEnd='}}';
   const defaultPattern=$('#fnPattern').value||'{{HOME_TEAM}}対{{AWAY_TEAM}}';
   const cm={ season:($('#cmnSeason').value||'').trim(), comp:($('#cmnComp').value||'').trim(), matchday:($('#cmnMatchday').value||'').trim() };
-  const rows=[...document.querySelectorAll('#rows tr')].map(tr=>({
+  const rows=[...document.querySelectorAll('#rows .mcard')].map(tr=>({
     home:tr.querySelector('.home').value.trim(),
     away:tr.querySelector('.away').value.trim(),
     tplId:+tr.querySelector('.rowtpl').value,
