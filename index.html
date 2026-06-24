@@ -130,7 +130,7 @@
       <h1>Wordフォーマット自動作成</h1>
       <span class="sub">対戦名・チーム情報を差し込んで Word を一括生成</span>
     </div>
-    <span class="ver">v37 · 2026-06-20</span>
+    <span class="ver">v38 · 2026-06-20</span>
   </div>
   <div id="status"></div>
 
@@ -506,7 +506,15 @@ async function generate(saveMode){
       if(aInfo) tags.push('Away: '+aInfo.name); else if(r.away) tags.push('Away情報なし');
       if(sInfo) tags.push('Stadium: '+sInfo.name);
       log(`✔ ${out[out.length-1].fname}（${tpl.name}）${tags.length?' / '+tags.join(' , '):''}`, (hInfo||aInfo||sInfo)?'ok':'wn');
-    }catch(err){ log(`✘ ${r.home}対${r.away}：${(err&&err.message)||err}`,'err'); }
+    }catch(err){
+      let msg=(err&&err.message)||String(err);
+      const subs=err&&err.properties&&err.properties.errors;
+      if(Array.isArray(subs)&&subs.length){
+        const parts=subs.map(e=>{const p=(e&&e.properties)||{}; const ctx=p.xtag||p.id||p.tag||p.context||''; const ex=p.explanation||(e&&e.message)||''; return ctx?`「${ctx}」: ${ex}`:ex;});
+        msg='テンプレートのタグに問題があります → '+parts.join(' / ');
+      }
+      log(`✘ ${r.home}対${r.away}（${tpl.name}）：${msg}`,'err');
+    }
   }
   if(out.length){
     try{ await saveOutputs(uniqueNames(out), saveMode); }
@@ -649,13 +657,14 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http')){
 document.querySelectorAll('.tab').forEach(function(t){
   t.addEventListener('click',function(){
     document.querySelectorAll('.tab').forEach(function(x){ x.classList.toggle('active', x===t); });
-    const id=t.dataset.tab;
-    ['make','teams','ph'].forEach(function(p){ const el=document.getElementById('tab-'+p); if(el) el.hidden=(p!==id); });
-    if(id==='teams') renderTeams((document.getElementById('teamSearch')||{}).value||'');
-    window.scrollTo({top:0,behavior:'smooth'});
+    const name=t.getAttribute('data-tab');
+    document.querySelectorAll('.tabpane').forEach(function(p){ p.hidden = (p.id !== 'tab-'+name); });
+    if(name==='teams'){ const s=document.getElementById('teamSearch'); renderTeams(s?s.value:''); }
   });
 });
-(function(){ const ts=document.getElementById('teamSearch'); if(ts) ts.addEventListener('input',function(){ renderTeams(ts.value); }); })();
+
+/* ---------- チーム検索 ---------- */
+(function(){ const s=document.getElementById('teamSearch'); if(s) s.addEventListener('input',function(){ renderTeams(s.value); }); })();
 
 </script>
 </body>
