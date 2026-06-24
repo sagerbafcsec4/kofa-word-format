@@ -147,7 +147,7 @@
       <h1>Wordフォーマット自動作成</h1>
       <span class="sub">対戦名・チーム情報を差し込んで Word を一括生成</span>
     </div>
-    <span class="ver">v43 · 2026-06-20</span>
+    <span class="ver">v44 · 2026-06-20</span>
   </div>
   <div id="status"></div>
 
@@ -202,7 +202,6 @@
       <div class="fld"><label>オプションから選ぶ</label><select id="fnPreset"></select></div>
       <div class="fld"><label>各ファイル名の書式</label><input id="fnPattern" value="{{HOME_TEAM}}対{{AWAY_TEAM}}"></div>
     </div>
-    <p class="hint">この書式が全試合に使われます。特定の試合だけ変えたいときは、その行の「ファイル名」でオプションを選ぶか「✏ カスタム…」で自由入力できます。記法は「プレースホルダ」タブ参照（拡張子 <code>.docx</code> は自動）。</p>
   </div>
 
   <div class="card">
@@ -233,7 +232,6 @@
       <button class="btn primary big" id="genFolder">フォルダを選んで個別に保存</button>
       <button class="btn outline big" id="genZip">ZIPにまとめて保存</button>
     </div>
-    <p class="hint">※「フォルダを選んで個別に保存」は、保存先フォルダを選ぶと各試合を1ファイルずつ書き出します（Chrome・Edge推奨）。1試合のときはそのまま保存されます。「ZIPにまとめて保存」はどこでも保存でき、あとで展開します。</p>
     <div id="log"></div>
   </div>
   </div>
