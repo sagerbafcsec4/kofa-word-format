@@ -147,7 +147,8 @@
       <h1>Wordフォーマット自動作成</h1>
       <span class="sub">対戦名・チーム情報を差し込んで Word を一括生成</span>
     </div>
-    <!-- build v48 · 2026-06-20 -->
+    <button class="btn ghost" id="resetAll" style="margin-left:auto">すべてリセット</button>
+    <!-- build v49 · 2026-06-20 -->
   </div>
   <div id="status"></div>
 
@@ -466,6 +467,15 @@ function renumber(){
 }
 $('#addRow').onclick=()=>addRow();
 $('#clearRows').onclick=()=>{ $('#rows').innerHTML=''; addRow(); };
+$('#resetAll').onclick=()=>{
+  if(!confirm('入力した内容（共通設定・ファイル名の書式・対戦リスト）をすべてリセットします。よろしいですか？\n※読み込んだフォーマットベース／チーム情報／スタジアム情報のファイルは残ります。')) return;
+  ['#cmnSeason','#cmnComp','#cmnMatchday'].forEach(sel=>{ const e=$(sel); if(e) e.value=''; });
+  const fp=$('#fnPattern'); if(fp) fp.value='{{HOME_TEAM}}対{{AWAY_TEAM}}';
+  const fpre=$('#fnPreset'); if(fpre) fpre.value='';
+  const bulk=$('#bulk'); if(bulk) bulk.value='';
+  $('#rows').innerHTML=''; addRow();
+  const lg=$('#log'); if(lg) lg.innerHTML='';
+};
 
 $('#bulkAdd').onclick=()=>{
   const lines=$('#bulk').value.split('\n').map(s=>s.trim()).filter(Boolean);
