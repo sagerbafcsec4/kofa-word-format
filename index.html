@@ -148,7 +148,7 @@
       <span class="sub">対戦名・チーム情報を差し込んで Word を一括生成</span>
     </div>
     <button class="btn ghost" id="resetAll" style="margin-left:auto">すべてリセット</button>
-    <!-- build v49 · 2026-06-20 -->
+    <!-- build v50 · 2026-06-20 -->
   </div>
   <div id="status"></div>
 
@@ -490,6 +490,34 @@ $('#bulkAdd').onclick=()=>{
 };
 
 /* ---------- generate ---------- */
+/* ---------- 出力検証：差し込み以外が変わっていないか自己チェック ---------- */
+function vText(bytes){
+  try{
+    const zip=new PizZip(bytes);
+    const xml=zip.file('word/document.xml').asText();
+    const m=xml.match(/<w:t[^>]*>[\s\S]*?<\/w:t>/g)||[];
+    let s=m.map(x=>x.replace(/<[^>]+>/g,'')).join('');
+    s=s.replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&apos;/g,"'").replace(/&amp;/g,'&');
+    return s;
+  }catch(e){ return null; }
+}
+function vNorm(s){ return (s||'').replace(/\s+/g,' ').trim(); }
+function verifyOnlyPlaceholders(tplBytes, outBytes, r, cm){
+  const T=vText(tplBytes), O=vText(outBytes);
+  if(T==null||O==null) return {soft:true, reason:'本文を読み取れず検証をスキップしました'};
+  const repl={
+    'HOME_TEAM':r.home||'','AWAY_TEAM':r.away||'','Home Team':r.home||'','Away Team':r.away||'',
+    'SEASON':cm.season||'','COMPETITION':cm.comp||'','MATCHDAY':cm.matchday||'',
+    'HOME_INFO':'','AWAY_INFO':'','HOME_STADIUM_INFO':'','AWAY_STADIUM_INFO':''
+  };
+  const E=T.replace(/\{\{\s*([^{}]+?)\s*\}\}/g,(m,k)=> (k in repl)? repl[k] : '');
+  const a=vNorm(E), b=vNorm(O);
+  if(a===b) return {ok:true};
+  let i=0; while(i<a.length&&i<b.length&&a[i]===b[i]) i++;
+  const seg=b.slice(Math.max(0,i-12), i+12).replace(/\s+/g,' ');
+  return {ok:false, reason:'固定文に想定外の差分（…'+seg+'…付近）'};
+}
+
 async function generate(saveMode){
   $('#log').innerHTML='';
   if(typeof PizZip==='undefined'||typeof docxtemplater==='undefined'){
@@ -534,6 +562,10 @@ async function generate(saveMode){
       if(hStad) tags.push('Hスタジアム: '+hStad.name);
       if(aStad) tags.push('Aスタジアム: '+aStad.name);
       log(`✔ ${out[out.length-1].fname}（${tpl.name}）${tags.length?' / '+tags.join(' , '):''}`, (hInfo||aInfo||hStad||aStad)?'ok':'wn');
+      const vr=verifyOnlyPlaceholders(tpl.buf, bytes, r, cm);
+      if(vr.ok) log('　🔍 検証OK：差し込みのみ・既存データの改変なし','ok');
+      else if(vr.soft) log('　🔍 '+vr.reason,'wn');
+      else log('　🔍 検証⚠：'+vr.reason+' ／ ファイルは保存します。念のためご確認ください','wn');
     }catch(err){
       let msg=(err&&err.message)||String(err);
       const subs=err&&err.properties&&err.properties.errors;
