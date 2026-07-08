@@ -1,4 +1,4 @@
-const CACHE = 'taisen-format-v50';
+const CACHE = 'taisen-format-v51';
 const ASSETS = ['./','./index.html','./manifest.webmanifest','./icon-192.png','./icon-512.png','./favicon-16.png','./favicon-32.png'];
 
 self.addEventListener('install', e => {
