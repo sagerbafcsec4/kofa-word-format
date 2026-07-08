@@ -148,7 +148,7 @@
       <span class="sub">対戦名・チーム情報を差し込んで Word を一括生成</span>
     </div>
     <button class="btn ghost" id="resetAll" style="margin-left:auto">すべてリセット</button>
-    <!-- build v51 · 2026-06-20 -->
+    <!-- build v52 · 2026-06-20 -->
   </div>
   <div id="status"></div>
 
@@ -246,8 +246,8 @@
         <input id="teamSearch" placeholder="🔍 チーム名で検索" style="max-width:320px">
       </div>
       <div class="teamwrap"><table class="teamtbl">
-        <thead><tr><th>チーム名</th><th>国</th><th>都市</th><th>ホームスタジアム①</th><th>ホームスタジアム②</th></tr></thead>
-        <tbody id="teamsTbody"><tr><td colspan="5" style="padding:14px;color:#94a3b8">読み込み中…</td></tr></tbody>
+        <thead><tr><th>チーム名</th><th>別表記</th><th>国</th><th>都市</th><th>ホームスタジアム①</th><th>ホームスタジアム②</th></tr></thead>
+        <tbody id="teamsTbody"><tr><td colspan="6" style="padding:14px;color:#94a3b8">読み込み中…</td></tr></tbody>
       </table></div>
     </div>
   </div>
@@ -387,23 +387,32 @@ function splitCsv(line){ const out=[]; let cur='',q=false; for(let i=0;i<line.le
   out.push(cur); return out; }
 async function loadTeams(){
   try{ const r=await fetch(TEAMS_CSV); const t=await r.text();
-    const rows=t.split(/\r?\n/).filter(x=>x.trim().length); const head=splitCsv(rows[0]);
-    const iT=head.indexOf('チーム名'), iC=head.indexOf('国'), iCt=head.indexOf('都市'), i1=head.indexOf('ホームスタジアム①'), i2=head.indexOf('ホームスタジアム②');
+    const rows=t.split(/\r?\n/).filter(x=>x.trim().length); if(!rows.length){ teamsMap={}; return teamsMap; }
+    const head=splitCsv(rows[0]).map(h=>(h||'').trim());
+    const findCol=(sub)=>{ for(let i=0;i<head.length;i++){ if(head[i].includes(sub)) return i; } return -1; };
+    // 見出し名で列を特定（列順を変えても壊れない）
+    let iT=findCol('チーム名'), iA=findCol('別表記'), iC=findCol('国'), iCt=findCol('都市'), i1=findCol('①'), i2=findCol('②');
+    const hasHeader = iT>=0;
+    let dataStart=1;
+    if(!hasHeader){ iT=0; iA=1; iC=2; iCt=3; i1=4; i2=5; dataStart=0; } // 見出し行が無い場合のみ A〜F 固定順にフォールバック
     const map={}; teamsRows.length=0;
-    for(let r2=1;r2<rows.length;r2++){ const c=splitCsv(rows[r2]); const tn=(c[iT]||'').trim(); if(!tn) continue;
-      const s1=(c[i1]||'').trim(), s2=(i2>=0?(c[i2]||'').trim():'');
-      map[normKey(tn)]={ s1, s2 };
-      teamsRows.push({ team:tn, country:(iC>=0?(c[iC]||'').trim():''), city:(iCt>=0?(c[iCt]||'').trim():''), s1, s2 });
+    for(let r2=dataStart;r2<rows.length;r2++){ const c=splitCsv(rows[r2]); const tn=(iT>=0?(c[iT]||'').trim():''); if(!tn) continue;
+      const alt=(iA>=0?(c[iA]||'').trim():'');
+      const s1=(i1>=0?(c[i1]||'').trim():''), s2=(i2>=0?(c[i2]||'').trim():'');
+      const entry={ s1, s2 };
+      map[normKey(tn)]=entry;
+      if(alt) map[normKey(alt)]=entry; // 正式名・別表記どちらで入力しても照合できる
+      teamsRows.push({ team:tn, alt, country:(iC>=0?(c[iC]||'').trim():''), city:(iCt>=0?(c[iCt]||'').trim():''), s1, s2 });
     }
     teamsMap=map; renderTeams(''); return map;
-  }catch(e){ teamsMap={}; const tb=document.getElementById('teamsTbody'); if(tb) tb.innerHTML='<tr><td colspan="5" style="padding:14px;color:#94a3b8">共有シートを読み込めませんでした（ネットワークをご確認ください）</td></tr>'; return teamsMap; }
+  }catch(e){ teamsMap={}; const tb=document.getElementById('teamsTbody'); if(tb) tb.innerHTML='<tr><td colspan="6" style="padding:14px;color:#94a3b8">共有シートを読み込めませんでした（ネットワークをご確認ください）</td></tr>'; return teamsMap; }
 }
 function renderTeams(filter){
   const tb=document.getElementById('teamsTbody'); if(!tb) return;
   const f=normKey(filter||'');
-  const rows=teamsRows.filter(r=>!f||normKey(r.team).includes(f));
-  tb.innerHTML = rows.length ? rows.map(r=>`<tr><td>${esc(r.team)}</td><td>${esc(r.country)}</td><td>${esc(r.city)}</td><td>${esc(r.s1)}</td><td>${esc(r.s2)}</td></tr>`).join('')
-    : '<tr><td colspan="5" style="padding:14px;color:#94a3b8">該当なし</td></tr>';
+  const rows=teamsRows.filter(r=>!f||normKey(r.team).includes(f)||normKey(r.alt).includes(f));
+  tb.innerHTML = rows.length ? rows.map(r=>`<tr><td>${esc(r.team)}</td><td>${esc(r.alt)}</td><td>${esc(r.country)}</td><td>${esc(r.city)}</td><td>${esc(r.s1)}</td><td>${esc(r.s2)}</td></tr>`).join('')
+    : '<tr><td colspan="6" style="padding:14px;color:#94a3b8">該当なし</td></tr>';
 }
 wireDrop('#dropStad','#stadInput', list=>{
   [...list].forEach(f=>{
