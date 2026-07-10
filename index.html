@@ -108,12 +108,14 @@
   .phtable{width:100%;border-collapse:separate;border-spacing:0 8px}
   .phtable td{padding:5px 10px;vertical-align:middle;font-size:13px;color:#334155}
   .phtable td:first-child{width:210px;white-space:nowrap}
-  .teams-tools{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:12px 0 14px}
+  .teams-tools{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:12px 0 18px}
   .teamwrap{max-height:62vh;overflow:auto;border:1px solid var(--line);border-radius:12px}
   .teamtbl{width:100%;border-collapse:collapse;font-size:13px}
-  .teamtbl thead th{position:sticky;top:0;background:#eef4fb;color:#475569;font-weight:600;text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);font-size:12px;white-space:nowrap}
-  .teamtbl td{padding:8px 12px;border-bottom:1px solid var(--line2);color:#334155;white-space:nowrap}
-  .teamtbl tr:hover td{background:#f6faff}
+  .teamtbl thead th{position:sticky;top:0;background:#eef4fb;color:#475569;font-weight:600;text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);border-right:1px solid var(--line2);font-size:12px;white-space:nowrap}
+  .teamtbl td{padding:8px 12px;border-bottom:1px solid var(--line2);border-right:1px solid var(--line2);color:#334155;white-space:normal;word-break:break-word;line-height:1.5;vertical-align:top}
+  .teamtbl th:last-child,.teamtbl td:last-child{border-right:none}
+  .teamtbl tbody tr:nth-child(even) td{background:#f8fafc}
+  .teamtbl tbody tr:hover td{background:#eef4fb}
 
   /* ===== 対戦リスト：Excel版と同じ2段カード（文字が切れない） ===== */
   .matchlist{display:flex;flex-direction:column;gap:12px;margin-top:4px}
@@ -148,7 +150,7 @@
       <span class="sub">対戦名・チーム情報を差し込んで Word を一括生成</span>
     </div>
     <button class="btn ghost" id="resetAll" style="margin-left:auto">すべてリセット</button>
-    <!-- build v52 · 2026-06-20 -->
+    <!-- build v53 · 2026-06-20 -->
   </div>
   <div id="status"></div>
 
@@ -240,10 +242,10 @@
   <div id="tab-teams" class="tabpane" hidden>
     <div class="card">
       <h2>チーム一覧（共有シート）</h2>
-      <p class="hint">この一覧は共有スプレッドシートから読み込まれます（閲覧専用）。対戦リストのホームチーム名がここの「チーム名」と一致すると、スタジアム情報の自動照合に使われます。追加・修正は管理者がスプレッドシートで行ってください。</p>
+      <p class="hint">この一覧は共有スプレッドシートから読み込まれます。対戦リストのチーム名が「チーム名」または「別表記」と一致すると、スタジアム情報の自動照合に使われます。追加・修正は「共有シートを開いて編集」から行ってください。</p>
       <div class="teams-tools">
         <a class="btn ghost" href="https://docs.google.com/spreadsheets/d/1USqNCDdUBc2hJfv4Vw5JuORWfUF6kitjEasfvelm6MQ/edit?gid=0#gid=0" target="_blank" rel="noopener">共有シートを開いて編集</a>
-        <input id="teamSearch" placeholder="🔍 チーム名で検索" style="max-width:320px">
+        <input id="teamSearch" placeholder="🔍 チーム名・別表記・国・都市・スタジアムで検索" style="flex:1;min-width:240px">
       </div>
       <div class="teamwrap"><table class="teamtbl">
         <thead><tr><th>チーム名</th><th>別表記</th><th>国</th><th>都市</th><th>ホームスタジアム①</th><th>ホームスタジアム②</th></tr></thead>
@@ -255,13 +257,13 @@
   <div id="tab-ph" class="tabpane" hidden>
     <div class="card">
       <h2>差し込みプレースホルダ</h2>
-      <p class="hint">フォーマットベースの本文や「ファイル名の書式」に次の記法を書いておくと、生成時に自動で置き換わります。</p>
+      <p class="hint">フォーマットベースの本文に次の記法を書いておくと、生成時に自動で置き換わります。<b>「ファイル名（共通）」欄にも同じトークンが使えます</b>（拡張子 <code>.docx</code> は自動付与）。</p>
       <table class="phtable">
         <tr><td><code>{{HOME_TEAM}}</code></td><td>ホームチーム名</td></tr>
         <tr><td><code>{{AWAY_TEAM}}</code></td><td>アウェイチーム名</td></tr>
-        <tr><td><code>{{SEASON}}</code></td><td>シーズン（共通設定で入力）</td></tr>
-        <tr><td><code>{{COMPETITION}}</code></td><td>大会名（共通設定で入力）</td></tr>
-        <tr><td><code>{{MATCHDAY}}</code></td><td>第●節（共通設定で入力）</td></tr>
+        <tr><td><code>{{SEASON}}</code></td><td>シーズン（共通設定で入力／例：26/27・2026/27・2026-2027）</td></tr>
+        <tr><td><code>{{COMPETITION}}</code></td><td>大会名（共通設定で入力／例：プレミアリーグ・ラ・リーガ・UEFAチャンピオンズリーグ）</td></tr>
+        <tr><td><code>{{MATCHDAY}}</code></td><td>節・ラウンド（共通設定で入力／例：第●節・MD●・準々決勝1stleg・準決勝2ndleg）</td></tr>
       </table>
     </div>
     <div class="card">
@@ -410,7 +412,7 @@ async function loadTeams(){
 function renderTeams(filter){
   const tb=document.getElementById('teamsTbody'); if(!tb) return;
   const f=normKey(filter||'');
-  const rows=teamsRows.filter(r=>!f||normKey(r.team).includes(f)||normKey(r.alt).includes(f));
+  const rows=teamsRows.filter(r=>!f||[r.team,r.alt,r.country,r.city,r.s1,r.s2].some(v=>normKey(v).includes(f)));
   tb.innerHTML = rows.length ? rows.map(r=>`<tr><td>${esc(r.team)}</td><td>${esc(r.alt)}</td><td>${esc(r.country)}</td><td>${esc(r.city)}</td><td>${esc(r.s1)}</td><td>${esc(r.s2)}</td></tr>`).join('')
     : '<tr><td colspan="6" style="padding:14px;color:#94a3b8">該当なし</td></tr>';
 }
