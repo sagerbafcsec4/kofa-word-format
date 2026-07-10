@@ -150,7 +150,7 @@
       <span class="sub">対戦名・チーム情報を差し込んで Word を一括生成</span>
     </div>
     <button class="btn ghost" id="resetAll" style="margin-left:auto">すべてリセット</button>
-    <!-- build v54 · 2026-06-20 -->
+    <!-- build v55 · 2026-06-20 -->
   </div>
   <div id="status"></div>
 
@@ -711,9 +711,14 @@ addRow();
 
 /* ---------- ファイル名プリセットの初期化 ---------- */
 (function(){
-  const sel=document.getElementById('fnPreset'); if(!sel) return;
+  const sel=document.getElementById('fnPreset'); const pat=document.getElementById('fnPattern'); if(!sel) return;
   sel.innerHTML='<option value="">オプションから選ぶ…</option>'+FN_PRESETS.map(p=>`<option value="${esc(p.value)}">${esc(p.label)}</option>`).join('');
-  sel.addEventListener('change',()=>{ if(sel.value){ document.getElementById('fnPattern').value=sel.value; sel.value=''; } });
+  // オプション選択で書式を反映し、選択状態を保持する
+  sel.addEventListener('change',()=>{ if(sel.value && pat){ pat.value=sel.value; } });
+  // 書式を手入力で変えたら、一致するオプションに追従（無ければ「オプションから選ぶ…」に戻す）
+  if(pat) pat.addEventListener('input',()=>{ const m=FN_PRESETS.find(p=>p.value===pat.value); sel.value=m?m.value:''; });
+  // 起動時、初期書式がプリセットと一致していれば選択に反映
+  if(pat){ const m=FN_PRESETS.find(p=>p.value===pat.value); if(m) sel.value=m.value; }
 })();
 
 /* ---------- Service Worker 登録（PWA・http/https時のみ） ---------- */
