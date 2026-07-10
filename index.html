@@ -150,7 +150,7 @@
       <span class="sub">対戦名・チーム情報を差し込んで Word を一括生成</span>
     </div>
     <button class="btn ghost" id="resetAll" style="margin-left:auto">すべてリセット</button>
-    <!-- build v53 · 2026-06-20 -->
+    <!-- build v54 · 2026-06-20 -->
   </div>
   <div id="status"></div>
 
@@ -450,7 +450,7 @@ function addRow(home='',away='',tplId,fnSel='',fnText='',afterTr=null){
       <div class="mteam"><input class="home" placeholder="ホームチーム名" value="${esc(home)}"></div>
       <span class="mvs">対</span>
       <div class="mteam"><input class="away" placeholder="アウェイチーム名" value="${esc(away)}"></div>
-      <div class="mbtns"><button class="dup" title="この対戦を複製">複製</button><button class="swp" title="ホーム・アウェイを逆にした行を追加">HA逆</button><button class="x" title="削除">✕</button></div>
+      <div class="mbtns"><button class="dup" title="この対戦を複製">複製</button><button class="x" title="削除">✕</button></div>
     </div>
     <div class="mbot">
       <div class="mfield mtpl"><label>使用テンプレート</label><select class="rowtpl">${tplOptions(tplId||(templates[0]&&templates[0].id))}</select></div>
@@ -465,9 +465,6 @@ function addRow(home='',away='',tplId,fnSel='',fnText='',afterTr=null){
   tr.querySelector('.x').onclick=()=>{ tr.remove(); renumber(); };
   tr.querySelector('.dup').onclick=()=>{
     addRow(tr.querySelector('.home').value, tr.querySelector('.away').value, +tr.querySelector('.rowtpl').value, selEl.value, txtEl.value, tr);
-  };
-  tr.querySelector('.swp').onclick=()=>{
-    addRow(tr.querySelector('.away').value, tr.querySelector('.home').value, +tr.querySelector('.rowtpl').value, selEl.value, txtEl.value, tr);
   };
   if(afterTr) afterTr.after(tr); else $('#rows').appendChild(tr);
   renumber();
