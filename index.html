@@ -133,6 +133,9 @@
   .mfield.mfile{flex:1 1 300px;min-width:220px}
   .mfield select,.mfield input{width:100%}
   .mfilewrap{display:flex;flex-direction:column;gap:6px}
+  .mfield.mstad2{flex:0 0 auto}
+  .mcheck{display:inline-flex;align-items:center;gap:7px;font-size:13px;color:#334155;font-weight:500;white-space:nowrap;cursor:pointer;padding:8px 2px}
+  .mfield .mcheck input[type=checkbox]{width:16px;height:16px;margin:0;flex:none;accent-color:var(--accent);cursor:pointer}
 </style>
 </head>
 <body>
@@ -150,7 +153,7 @@
       <span class="sub">対戦名・チーム情報を差し込んで Word を一括生成</span>
     </div>
     <button class="btn ghost" id="resetAll" style="margin-left:auto">すべてリセット</button>
-    <!-- build v55 · 2026-06-20 -->
+    <!-- build v56 · 2026-06-20 -->
   </div>
   <div id="status"></div>
 
@@ -433,16 +436,17 @@ function renderStads(){
     box.appendChild(d);
   });
 }
-function findStadium(homeName){
+function findStadium(name, prefer2){
   if(!teamsMap) return null;
-  const e=teamsMap[normKey(homeName)]; if(!e) return null;
-  for(const cand of [e.s1,e.s2]){ if(!cand) continue;
+  const e=teamsMap[normKey(name)]; if(!e) return null;
+  const order = prefer2 ? [e.s2,e.s1] : [e.s1,e.s2]; // ②を使う指定なら②を優先
+  for(const cand of order){ if(!cand) continue;
     const hit=stadInfos.find(t=>t.key===normKey(cand)); if(hit) return hit; }
   return null;
 }
 
 /* ---------- match rows ---------- */
-function addRow(home='',away='',tplId,fnSel='',fnText='',afterTr=null){
+function addRow(home='',away='',tplId,fnSel='',fnText='',use2=false,afterTr=null){
   const tr=document.createElement('div'); tr.className='mcard'; tr.dataset.id=++rowSeq;
   tr.innerHTML=`
     <div class="mtop">
@@ -454,6 +458,7 @@ function addRow(home='',away='',tplId,fnSel='',fnText='',afterTr=null){
     </div>
     <div class="mbot">
       <div class="mfield mtpl"><label>使用テンプレート</label><select class="rowtpl">${tplOptions(tplId||(templates[0]&&templates[0].id))}</select></div>
+      <div class="mfield mstad2"><label>スタジアム</label><label class="mcheck" title="①②の両方が読み込まれているとき、この対戦は②を優先します"><input type="checkbox" class="rowstad2" ${use2?'checked':''}>②を使う</label></div>
       <div class="mfield mfile"><label>ファイル名</label><div class="mfilewrap"><select class="rowfn">${fnRowOptions(fnSel)}</select><input class="rowfnText" placeholder="このファイルだけの名前" value="${esc(fnText)}" style="${fnSel==='__custom__'?'':'display:none;'}"></div></div>
     </div>`;
   const selEl=tr.querySelector('.rowfn'), txtEl=tr.querySelector('.rowfnText');
@@ -464,7 +469,7 @@ function addRow(home='',away='',tplId,fnSel='',fnText='',afterTr=null){
   });
   tr.querySelector('.x').onclick=()=>{ tr.remove(); renumber(); };
   tr.querySelector('.dup').onclick=()=>{
-    addRow(tr.querySelector('.home').value, tr.querySelector('.away').value, +tr.querySelector('.rowtpl').value, selEl.value, txtEl.value, tr);
+    addRow(tr.querySelector('.home').value, tr.querySelector('.away').value, +tr.querySelector('.rowtpl').value, selEl.value, txtEl.value, tr.querySelector('.rowstad2').checked, tr);
   };
   if(afterTr) afterTr.after(tr); else $('#rows').appendChild(tr);
   renumber();
@@ -539,7 +544,8 @@ async function generate(saveMode){
     home:tr.querySelector('.home').value.trim(),
     away:tr.querySelector('.away').value.trim(),
     tplId:+tr.querySelector('.rowtpl').value,
-    fn:(function(){ const sv=tr.querySelector('.rowfn').value; if(sv==='__custom__'){ const t=tr.querySelector('.rowfnText'); return (t&&t.value.trim())||''; } return sv; })()
+    fn:(function(){ const sv=tr.querySelector('.rowfn').value; if(sv==='__custom__'){ const t=tr.querySelector('.rowfnText'); return (t&&t.value.trim())||''; } return sv; })(),
+    use2:!!(tr.querySelector('.rowstad2')&&tr.querySelector('.rowstad2').checked)
   })).filter(r=>r.home||r.away);
   if(!rows.length){ log('対戦を1件以上入力してください','err'); return; }
 
@@ -556,7 +562,7 @@ async function generate(saveMode){
       doc.render({'Home Team':r.home,'Away Team':r.away,'HOME_TEAM':r.home,'AWAY_TEAM':r.away,'SEASON':cm.season,'COMPETITION':cm.comp,'MATCHDAY':cm.matchday});
       let bytes=doc.getZip().generate({type:'uint8array'});
       const inserts=[];
-      const hInfo=findInfo(r.home), aInfo=findInfo(r.away), hStad=findStadium(r.home), aStad=findStadium(r.away);
+      const hInfo=findInfo(r.home), aInfo=findInfo(r.away), hStad=findStadium(r.home, r.use2), aStad=findStadium(r.away, r.use2);
       if(hInfo) inserts.push({marker:'[[HOME_INFO]]', data:hInfo.buf});
       if(aInfo) inserts.push({marker:'[[AWAY_INFO]]', data:aInfo.buf});
       if(hStad) inserts.push({marker:'[[HOME_STADIUM_INFO]]', data:hStad.buf});
