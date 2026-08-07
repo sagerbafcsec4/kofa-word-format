@@ -748,3 +748,38 @@ document.querySelectorAll('.tab').forEach(function(t){
 </script>
 </body>
 </html>
+<style>
+/* 対戦リスト：不要項目を非表示＋ラベル＆バランス調整 */
+.mbot .mfield.mstad2, .mbot .mfield.mfile{display:none!important}
+.mtop{display:flex;flex-wrap:nowrap;align-items:flex-end;gap:10px}
+.mtop > .mteam{flex:1 1 0;min-width:0;display:flex;flex-direction:column;gap:3px}
+.mtop > .mteam::before{font-size:12px;font-weight:700;color:#475569;line-height:1.4}
+.mtop > div:nth-of-type(1).mteam::before{content:"ホームチーム"}
+.mtop > div:nth-of-type(2).mteam::before{content:"アウェイチーム"}
+.mtop > .mteam input{width:100%}
+.mtop > .mvs{padding-bottom:9px;font-weight:700;color:#64748b;flex:0 0 auto}
+.mtop > .mnum{align-self:flex-end;margin-bottom:6px}
+.mtop > .mbtns{align-self:flex-end;display:flex;gap:8px;padding-bottom:2px}
+.mbot{display:flex;gap:12px;margin-top:10px}
+.mbot .mfield{flex:1 1 0;min-width:0}
+.mbot .mfield input, .mbot .mfield select{width:100%}
+</style>
+<script>
+/* ファイル名（共通）のプリセットに「カスタム」を追加（値なし＝自由入力） */
+(function(){
+  function addCustom(){
+    var ps = document.getElementById('fnPreset');
+    if (!ps) return;
+    for (var i = 0; i < ps.options.length; i++) {
+      if (ps.options[i].textContent.indexOf('カスタム') >= 0) return;
+    }
+    var o = document.createElement('option');
+    o.value = ''; o.textContent = '✏ カスタム…';
+    ps.appendChild(o);
+  }
+  addCustom();
+  document.addEventListener('DOMContentLoaded', addCustom);
+  var ps = document.getElementById('fnPreset');
+  if (ps && window.MutationObserver) new MutationObserver(addCustom).observe(ps, {childList: true});
+})();
+</script>
