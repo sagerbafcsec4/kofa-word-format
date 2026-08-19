@@ -123,7 +123,8 @@
   .mtop{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
   .mnum{flex:0 0 auto;width:26px;height:26px;border-radius:50%;background:var(--grad);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;box-shadow:0 4px 10px -3px rgba(43,87,154,.45)}
   .mteam{flex:1 1 200px;min-width:150px}
-  .mteam input{width:100%}
+  .mteam input,.mteam select{width:100%}
+  .mteam select:disabled{color:#94a3b8;font-weight:500}
   .mvs{flex:0 0 auto;color:var(--sub);font-weight:600;padding:0 2px}
   .mbtns{flex:0 0 auto;display:flex;gap:6px;align-items:center;margin-left:auto}
   .mbot{display:flex;gap:10px 16px;align-items:flex-end;flex-wrap:wrap;margin-top:12px}
@@ -176,10 +177,19 @@
   <div class="card">
     <h2><span class="step">2</span> 共通設定</h2>
     <div class="grid3">
-      <div class="fld"><label>シーズン</label><input id="cmnSeason" placeholder="25/26 など"></div>
-      <div class="fld"><label>大会名</label><input id="cmnComp" placeholder="UEFAチャンピオンズリーグ など"></div>
+      <div class="fld">
+        <label>シーズン</label>
+        <select id="cmnSeason"></select>
+        <input id="cmnSeasonCustom" placeholder="例: 2028/29" style="display:none;margin-top:6px">
+      </div>
+      <div class="fld">
+        <label>大会名</label>
+        <select id="cmnComp"></select>
+        <input id="cmnCompCustom" placeholder="大会名を入力" style="display:none;margin-top:6px">
+      </div>
       <div class="fld"><label>第●節</label><input id="cmnMatchday" placeholder="第●節 / MD● / 準々決勝1stleg"></div>
     </div>
+    <p class="hint">大会名を選ぶと、下の対戦リストのホーム/アウェイ欄がそのリーグの登録チームだけに絞られます。チームの所属リーグは「チーム一覧」タブの共有シートで設定してください。「カスタム」を選んだ場合はチーム名を自由入力できます。</p>
   </div>
 
   <div class="card">
@@ -245,14 +255,14 @@
   <div id="tab-teams" class="tabpane" hidden>
     <div class="card">
       <h2>チーム一覧（共有シート）</h2>
-      <p class="hint">この一覧は共有スプレッドシートから読み込まれます。対戦リストのチーム名が「チーム名」または「別表記」と一致すると、スタジアム情報の自動照合に使われます。追加・修正は「共有シートを開いて編集」から行ってください。</p>
+      <p class="hint">この一覧は共有スプレッドシートから読み込まれます。対戦リストのチーム名が「チーム名」または「別表記」と一致すると、スタジアム情報の自動照合に使われます。追加・修正は「共有シートを開いて編集」から行ってください。<br>「所属リーグ」列に <code>プレミアリーグ</code> <code>ラ・リーガ</code> <code>エールディヴィジ</code> のいずれかを書くと、共通設定で大会名を選んだときに対戦リストのチーム欄がそのリーグだけに絞られます。</p>
       <div class="teams-tools">
         <a class="btn ghost" href="https://docs.google.com/spreadsheets/d/1USqNCDdUBc2hJfv4Vw5JuORWfUF6kitjEasfvelm6MQ/edit?gid=0#gid=0" target="_blank" rel="noopener">共有シートを開いて編集</a>
-        <input id="teamSearch" placeholder="🔍 チーム名・別表記・国・都市・スタジアムで検索" style="flex:1;min-width:240px">
+        <input id="teamSearch" placeholder="🔍 チーム名・所属リーグ・別表記・国・都市・スタジアムで検索" style="flex:1;min-width:240px">
       </div>
       <div class="teamwrap"><table class="teamtbl">
-        <thead><tr><th>チーム名</th><th>別表記</th><th>国</th><th>都市</th><th>ホームスタジアム①</th><th>ホームスタジアム②</th></tr></thead>
-        <tbody id="teamsTbody"><tr><td colspan="6" style="padding:14px;color:#94a3b8">読み込み中…</td></tr></tbody>
+        <thead><tr><th>チーム名</th><th>所属リーグ</th><th>別表記</th><th>国</th><th>都市</th><th>ホームスタジアム①</th><th>ホームスタジアム②</th></tr></thead>
+        <tbody id="teamsTbody"><tr><td colspan="7" style="padding:14px;color:#94a3b8">読み込み中…</td></tr></tbody>
       </table></div>
     </div>
   </div>
@@ -396,28 +406,29 @@ async function loadTeams(){
     const head=splitCsv(rows[0]).map(h=>(h||'').trim());
     const findCol=(sub)=>{ for(let i=0;i<head.length;i++){ if(head[i].includes(sub)) return i; } return -1; };
     // 見出し名で列を特定（列順を変えても壊れない）
-    let iT=findCol('チーム名'), iA=findCol('別表記'), iC=findCol('国'), iCt=findCol('都市'), i1=findCol('①'), i2=findCol('②');
+    let iT=findCol('チーム名'), iA=findCol('別表記'), iL=findCol('所属リーグ'), iC=findCol('国'), iCt=findCol('都市'), i1=findCol('①'), i2=findCol('②');
     const hasHeader = iT>=0;
     let dataStart=1;
-    if(!hasHeader){ iT=0; iA=1; iC=2; iCt=3; i1=4; i2=5; dataStart=0; } // 見出し行が無い場合のみ A〜F 固定順にフォールバック
+    if(!hasHeader){ iT=0; iA=1; iL=-1; iC=2; iCt=3; i1=4; i2=5; dataStart=0; } // 見出し行が無い場合のみ A〜F 固定順にフォールバック（所属リーグ列は無いものとして扱う）
     const map={}; teamsRows.length=0;
     for(let r2=dataStart;r2<rows.length;r2++){ const c=splitCsv(rows[r2]); const tn=(iT>=0?(c[iT]||'').trim():''); if(!tn) continue;
       const alt=(iA>=0?(c[iA]||'').trim():'');
+      const league=(iL>=0?(c[iL]||'').trim():'');
       const s1=(i1>=0?(c[i1]||'').trim():''), s2=(i2>=0?(c[i2]||'').trim():'');
       const entry={ s1, s2 };
       map[normKey(tn)]=entry;
       if(alt) map[normKey(alt)]=entry; // 正式名・別表記どちらで入力しても照合できる
-      teamsRows.push({ team:tn, alt, country:(iC>=0?(c[iC]||'').trim():''), city:(iCt>=0?(c[iCt]||'').trim():''), s1, s2 });
+      teamsRows.push({ team:tn, alt, league, country:(iC>=0?(c[iC]||'').trim():''), city:(iCt>=0?(c[iCt]||'').trim():''), s1, s2 });
     }
-    teamsMap=map; renderTeams(''); return map;
-  }catch(e){ teamsMap={}; const tb=document.getElementById('teamsTbody'); if(tb) tb.innerHTML='<tr><td colspan="6" style="padding:14px;color:#94a3b8">共有シートを読み込めませんでした（ネットワークをご確認ください）</td></tr>'; return teamsMap; }
+    teamsMap=map; renderTeams(''); refreshAllTeamFields(); return map;
+  }catch(e){ teamsMap={}; const tb=document.getElementById('teamsTbody'); if(tb) tb.innerHTML='<tr><td colspan="7" style="padding:14px;color:#94a3b8">共有シートを読み込めませんでした（ネットワークをご確認ください）</td></tr>'; return teamsMap; }
 }
 function renderTeams(filter){
   const tb=document.getElementById('teamsTbody'); if(!tb) return;
   const f=normKey(filter||'');
-  const rows=teamsRows.filter(r=>!f||[r.team,r.alt,r.country,r.city,r.s1,r.s2].some(v=>normKey(v).includes(f)));
-  tb.innerHTML = rows.length ? rows.map(r=>`<tr><td>${esc(r.team)}</td><td>${esc(r.alt)}</td><td>${esc(r.country)}</td><td>${esc(r.city)}</td><td>${esc(r.s1)}</td><td>${esc(r.s2)}</td></tr>`).join('')
-    : '<tr><td colspan="6" style="padding:14px;color:#94a3b8">該当なし</td></tr>';
+  const rows=teamsRows.filter(r=>!f||[r.team,r.alt,r.league,r.country,r.city,r.s1,r.s2].some(v=>normKey(v).includes(f)));
+  tb.innerHTML = rows.length ? rows.map(r=>`<tr><td>${esc(r.team)}</td><td>${esc(r.league)}</td><td>${esc(r.alt)}</td><td>${esc(r.country)}</td><td>${esc(r.city)}</td><td>${esc(r.s1)}</td><td>${esc(r.s2)}</td></tr>`).join('')
+    : '<tr><td colspan="7" style="padding:14px;color:#94a3b8">該当なし</td></tr>';
 }
 wireDrop('#dropStad','#stadInput', list=>{
   [...list].forEach(f=>{
@@ -445,15 +456,80 @@ function findStadium(name, prefer2){
   return null;
 }
 
+/* ---------- 共通設定：シーズン・大会名（プルダウン） ---------- */
+const LEAGUE_OPTIONS = ["プレミアリーグ","ラ・リーガ","エールディヴィジ"];
+const SEASON_OPTIONS = ["2026/27","2027/28"];
+const CUSTOM_VAL = "__custom__";
+function isCompCustom(){ const s=$('#cmnComp'); return !!s && s.value===CUSTOM_VAL; }
+function getCompValue(){ const s=$('#cmnComp'); if(!s) return ''; return s.value===CUSTOM_VAL ? ($('#cmnCompCustom').value||'').trim() : s.value; }
+function getSeasonValue(){ const s=$('#cmnSeason'); if(!s) return ''; return s.value===CUSTOM_VAL ? ($('#cmnSeasonCustom').value||'').trim() : s.value; }
+function teamsForLeague(league){ return teamsRows.filter(t=>(t.league||'').trim()===league); }
+function initCommonSelects(){
+  const compSel=$('#cmnComp');
+  compSel.innerHTML = '<option value="">選択してください</option>'
+    + LEAGUE_OPTIONS.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('')
+    + `<option value="${CUSTOM_VAL}">カスタム…</option>`;
+  compSel.addEventListener('change', ()=>{
+    const isCustom=compSel.value===CUSTOM_VAL;
+    const cust=$('#cmnCompCustom'); cust.style.display=isCustom?'':'none'; if(isCustom) cust.focus();
+    refreshAllTeamFields();
+  });
+  const seasonSel=$('#cmnSeason');
+  seasonSel.innerHTML = SEASON_OPTIONS.map(s=>`<option value="${esc(s)}">${esc(s)}</option>`).join('')
+    + `<option value="${CUSTOM_VAL}">その他…</option>`;
+  seasonSel.addEventListener('change', ()=>{
+    const isCustom=seasonSel.value===CUSTOM_VAL;
+    const cust=$('#cmnSeasonCustom'); cust.style.display=isCustom?'':'none'; if(isCustom) cust.focus();
+  });
+}
+function resetCommonSelects(){
+  const compSel=$('#cmnComp'); if(compSel) compSel.value='';
+  const compCustom=$('#cmnCompCustom'); if(compCustom){ compCustom.value=''; compCustom.style.display='none'; }
+  const seasonSel=$('#cmnSeason'); if(seasonSel) seasonSel.value=SEASON_OPTIONS[0];
+  const seasonCustom=$('#cmnSeasonCustom'); if(seasonCustom){ seasonCustom.value=''; seasonCustom.style.display='none'; }
+}
+
+/* ---------- 対戦リスト：ホーム/アウェイ欄（大会名に応じてプルダウン⇔自由入力） ---------- */
+function teamFieldHTML(cls, value){
+  const ph = cls==='home' ? 'ホームチーム名' : 'アウェイチーム名';
+  if(isCompCustom()){
+    return `<input class="${cls}" placeholder="${ph}" value="${esc(value)}">`;
+  }
+  const comp=getCompValue();
+  if(!comp){
+    return `<select class="${cls}" disabled><option value="">先に大会名を選んでください</option></select>`;
+  }
+  const pool=teamsForLeague(comp);
+  let h=`<select class="${cls}">`;
+  h+=`<option value="">${ph}を選択</option>`;
+  if(!pool.length){ h+=`<option value="" disabled>（このリーグの登録チームがありません。チーム一覧タブでご確認ください）</option>`; }
+  pool.forEach(t=>{ h+=`<option value="${esc(t.team)}" ${t.team===value?'selected':''}>${esc(t.team)}</option>`; });
+  if(value && !pool.some(t=>t.team===value)){
+    h+=`<option value="${esc(value)}" selected>${esc(value)}（現在の大会に未登録）</option>`;
+  }
+  h+='</select>';
+  return h;
+}
+function refreshAllTeamFields(){
+  document.querySelectorAll('#rows .mcard').forEach(tr=>{
+    const homeEl=tr.querySelector('.home'), awayEl=tr.querySelector('.away');
+    const homeVal=homeEl?homeEl.value:'', awayVal=awayEl?awayEl.value:'';
+    const wraps=tr.querySelectorAll('.mtop > .mteam');
+    if(wraps[0]) wraps[0].innerHTML=teamFieldHTML('home',homeVal);
+    if(wraps[1]) wraps[1].innerHTML=teamFieldHTML('away',awayVal);
+  });
+}
+function matchTeamName(name,pool){ if(!name||!pool) return null; const n=name.trim(); return pool.find(t=>t.team===n||(t.alt&&t.alt===n))||null; }
+
 /* ---------- match rows ---------- */
 function addRow(home='',away='',tplId,fnSel='',fnText='',use2=false,afterTr=null){
   const tr=document.createElement('div'); tr.className='mcard'; tr.dataset.id=++rowSeq;
   tr.innerHTML=`
     <div class="mtop">
       <span class="mnum row-num"></span>
-      <div class="mteam"><input class="home" placeholder="ホームチーム名" value="${esc(home)}"></div>
+      <div class="mteam">${teamFieldHTML('home',home)}</div>
       <span class="mvs">対</span>
-      <div class="mteam"><input class="away" placeholder="アウェイチーム名" value="${esc(away)}"></div>
+      <div class="mteam">${teamFieldHTML('away',away)}</div>
       <div class="mbtns"><button class="dup" title="この対戦を複製">複製</button><button class="x" title="削除">✕</button></div>
     </div>
     <div class="mbot">
@@ -482,7 +558,8 @@ $('#addRow').onclick=()=>addRow();
 $('#clearRows').onclick=()=>{ $('#rows').innerHTML=''; addRow(); };
 $('#resetAll').onclick=()=>{
   if(!confirm('入力した内容（共通設定・ファイル名の書式・対戦リスト）をすべてリセットします。よろしいですか？\n※読み込んだフォーマットベース／チーム情報／スタジアム情報のファイルは残ります。')) return;
-  ['#cmnSeason','#cmnComp','#cmnMatchday'].forEach(sel=>{ const e=$(sel); if(e) e.value=''; });
+  resetCommonSelects();
+  const md=$('#cmnMatchday'); if(md) md.value='';
   const fp=$('#fnPattern'); if(fp) fp.value='{{HOME_TEAM}}対{{AWAY_TEAM}}';
   const fpre=$('#fnPreset'); if(fpre) fpre.value='';
   const bulk=$('#bulk'); if(bulk) bulk.value='';
@@ -493,12 +570,27 @@ $('#resetAll').onclick=()=>{
 $('#bulkAdd').onclick=()=>{
   const lines=$('#bulk').value.split('\n').map(s=>s.trim()).filter(Boolean);
   const tplId=+$('#bulkTpl').value||undefined;
+  const custom=isCompCustom(); const pool=custom?null:teamsForLeague(getCompValue());
+  const unmatched=[];
   let n=0;
   lines.forEach(line=>{
     const parts=line.split(/\s*(?:対|vs\.?|VS|×|x|,|\t)\s*/i).filter(Boolean);
-    if(parts.length>=2){ addRow(parts[0],parts[1],tplId); n++; }
+    if(parts.length>=2){
+      let home=parts[0], away=parts[1];
+      if(!custom){
+        const hM=matchTeamName(home,pool), aM=matchTeamName(away,pool);
+        if(home && !hM) unmatched.push(home);
+        if(away && !aM) unmatched.push(away);
+        home = hM?hM.team:''; away = aM?aM.team:'';
+      }
+      addRow(home,away,tplId); n++;
+    }
   });
-  if(n){ $('#bulk').value=''; log(`${n}件の対戦を追加しました`,'ok'); }
+  if(n){
+    $('#bulk').value='';
+    log(`${n}件の対戦を追加しました`+(unmatched.length?`（うち${unmatched.length}件は現在の大会のチームと不一致のため空欄）`:''),'ok');
+    if(unmatched.length) alert('次のチーム名は「'+(getCompValue()||'（未選択）')+'」の登録チームと一致しませんでした。対戦リストで手動選択してください:\n\n'+[...new Set(unmatched)].join('\n'));
+  }
   else log('追加できる対戦が見つかりませんでした','wn');
 };
 
@@ -539,7 +631,7 @@ async function generate(saveMode){
   if(!templates.length){ log('先にフォーマットベース(.docx)を読み込んでください','err'); return; }
   const dStart='{{', dEnd='}}';
   const defaultPattern=$('#fnPattern').value||'{{HOME_TEAM}}対{{AWAY_TEAM}}';
-  const cm={ season:($('#cmnSeason').value||'').trim(), comp:($('#cmnComp').value||'').trim(), matchday:($('#cmnMatchday').value||'').trim() };
+  const cm={ season:getSeasonValue(), comp:getCompValue(), matchday:($('#cmnMatchday').value||'').trim() };
   const rows=[...document.querySelectorAll('#rows .mcard')].map(tr=>({
     home:tr.querySelector('.home').value.trim(),
     away:tr.querySelector('.away').value.trim(),
@@ -713,6 +805,7 @@ function log(msg,cls){ const d=document.createElement('div'); if(cls)d.className
   else{ el.textContent='✗ ライブラリ未読込です。ファイルを開き直してください（Ctrl+Shift+R）。'; el.style.color='#e0433b'; }
 })();
 
+initCommonSelects();
 addRow();
 
 /* ---------- ファイル名プリセットの初期化 ---------- */
@@ -756,7 +849,7 @@ document.querySelectorAll('.tab').forEach(function(t){
 .mtop > .mteam::before{font-size:12px;font-weight:700;color:#475569;line-height:1.4}
 .mtop > div:nth-of-type(1).mteam::before{content:"ホームチーム"}
 .mtop > div:nth-of-type(2).mteam::before{content:"アウェイチーム"}
-.mtop > .mteam input{width:100%}
+.mtop > .mteam input,.mtop > .mteam select{width:100%}
 .mtop > .mvs{padding-bottom:9px;font-weight:700;color:#64748b;flex:0 0 auto}
 .mtop > .mnum{align-self:flex-end;margin-bottom:6px}
 .mtop > .mbtns{align-self:flex-end;display:flex;gap:8px;padding-bottom:2px}
