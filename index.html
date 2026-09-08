@@ -74,6 +74,7 @@
   .btn.primary{background:var(--grad);color:#fff;box-shadow:0 8px 20px -8px rgba(43,87,154,.55)}
   .btn.primary:hover{filter:brightness(1.05);transform:translateY(-1px)}
   .btn.big{padding:14px 26px;font-size:15px;border-radius:13px}
+  .btn.sm{padding:5px 12px;font-size:12px;font-weight:600;border-radius:8px}
   .btn.ghost{background:#fff;color:#334155;border:1px solid var(--line)}
   .btn.ghost:hover{border-color:var(--accent);color:var(--accent)}
   .btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
@@ -243,16 +244,12 @@
   </div>
 
   <div class="card">
-    <h2><span class="step">7</span> 生成する</h2>
+    <h2><span class="step">7</span> 生成する<button class="btn ghost sm" id="resetGen" style="margin-left:auto" title="結果の表示だけを消します。上の設定と対戦リストは残ります">クリア</button></h2>
     <div class="savebar">
       <button class="btn primary big" id="genFolder">フォルダを選んで個別に保存</button>
       <button class="btn outline big" id="genZip">ZIPにまとめて保存</button>
     </div>
     <div id="log"></div>
-    <div class="toolbar" id="genResetBar" hidden>
-      <button class="btn ghost" id="resetGen">結果をクリアして、もう一度作る</button>
-      <p class="hint" style="margin:0;align-self:center">上の①〜⑥の設定と対戦リストはそのまま残ります</p>
-    </div>
   </div>
   </div>
 
@@ -699,7 +696,7 @@ async function generate(saveMode){
 function setGenDisabled(d){ const a=$('#genFolder'),b=$('#genZip'); if(a)a.disabled=d; if(b)b.disabled=d; }
 $('#genFolder').onclick=()=>generate('folder');
 $('#genZip').onclick=()=>generate('zip');
-$('#resetGen').onclick=()=>{ clearGenLog(); setGenDisabled(false); $('#genFolder').focus(); };
+$('#resetGen').onclick=()=>{ clearGenLog(); setGenDisabled(false); };
 
 /* ---------- altChunk 埋め込み ---------- */
 function altChunkMerge(baseBytes, inserts){
@@ -800,9 +797,8 @@ function sanitize(s){ return s.replace(/[\\\/:*?"<>|]/g,'_').trim()||'output'; }
 function stamp(){ const d=new Date(),p=n=>String(n).padStart(2,'0');
   return `${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}`; }
 function esc(s){ return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
-function log(msg,cls){ const d=document.createElement('div'); if(cls)d.className=cls; d.textContent=msg; $('#log').appendChild(d); setGenResetVisible(true); }
-function setGenResetVisible(v){ const b=$('#genResetBar'); if(b) b.hidden=!v; }
-function clearGenLog(){ const lg=$('#log'); if(lg) lg.innerHTML=''; setGenResetVisible(false); }
+function log(msg,cls){ const d=document.createElement('div'); if(cls)d.className=cls; d.textContent=msg; $('#log').appendChild(d); }
+function clearGenLog(){ const lg=$('#log'); if(lg) lg.innerHTML=''; }
 
 /* ---------- 起動時チェック ---------- */
 (function(){
