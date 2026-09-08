@@ -249,6 +249,10 @@
       <button class="btn outline big" id="genZip">ZIPにまとめて保存</button>
     </div>
     <div id="log"></div>
+    <div class="toolbar" id="genResetBar" hidden>
+      <button class="btn ghost" id="resetGen">結果をクリアして、もう一度作る</button>
+      <p class="hint" style="margin:0;align-self:center">上の①〜⑥の設定と対戦リストはそのまま残ります</p>
+    </div>
   </div>
   </div>
 
@@ -564,7 +568,7 @@ $('#resetAll').onclick=()=>{
   const fpre=$('#fnPreset'); if(fpre) fpre.value='';
   const bulk=$('#bulk'); if(bulk) bulk.value='';
   $('#rows').innerHTML=''; addRow();
-  const lg=$('#log'); if(lg) lg.innerHTML='';
+  clearGenLog();
 };
 
 $('#bulkAdd').onclick=()=>{
@@ -624,7 +628,7 @@ function verifyOnlyPlaceholders(tplBytes, outBytes, r, cm){
 }
 
 async function generate(saveMode){
-  $('#log').innerHTML='';
+  clearGenLog();
   if(typeof PizZip==='undefined'||typeof docxtemplater==='undefined'){
     log('内蔵ライブラリの読み込みに失敗しました。ファイルを開き直してください。','err'); return;
   }
@@ -695,6 +699,7 @@ async function generate(saveMode){
 function setGenDisabled(d){ const a=$('#genFolder'),b=$('#genZip'); if(a)a.disabled=d; if(b)b.disabled=d; }
 $('#genFolder').onclick=()=>generate('folder');
 $('#genZip').onclick=()=>generate('zip');
+$('#resetGen').onclick=()=>{ clearGenLog(); setGenDisabled(false); $('#genFolder').focus(); };
 
 /* ---------- altChunk 埋め込み ---------- */
 function altChunkMerge(baseBytes, inserts){
@@ -795,7 +800,9 @@ function sanitize(s){ return s.replace(/[\\\/:*?"<>|]/g,'_').trim()||'output'; }
 function stamp(){ const d=new Date(),p=n=>String(n).padStart(2,'0');
   return `${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}`; }
 function esc(s){ return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
-function log(msg,cls){ const d=document.createElement('div'); if(cls)d.className=cls; d.textContent=msg; $('#log').appendChild(d); }
+function log(msg,cls){ const d=document.createElement('div'); if(cls)d.className=cls; d.textContent=msg; $('#log').appendChild(d); setGenResetVisible(true); }
+function setGenResetVisible(v){ const b=$('#genResetBar'); if(b) b.hidden=!v; }
+function clearGenLog(){ const lg=$('#log'); if(lg) lg.innerHTML=''; setGenResetVisible(false); }
 
 /* ---------- 起動時チェック ---------- */
 (function(){
