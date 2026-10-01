@@ -143,18 +143,13 @@
 <body>
 <div class="wrap">
   <div class="head">
-    <svg class="logo" viewBox="0 0 44 44" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-      <defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1">
-        <stop offset="0" stop-color="#2b579a"/><stop offset="1" stop-color="#4a8fd6"/>
-      </linearGradient></defs>
-      <rect width="44" height="44" rx="12" fill="url(#lg)"/>
-      <polyline points="9,13.5 16.5,32 22,21.5 27.5,32 35,13.5" fill="none" stroke="#ffffff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
-    </svg>
+    <svg class="logo" aria-hidden="true" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><rect x="1" y="1" width="30" height="30" rx="8" fill="#2b579a"/><g fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 6.5h8.5l4.5 4.5v14.5H10z"/><path d="M18.5 6.5V11H23"/></g><text x="16.5" y="22.5" font-family="Arial,sans-serif" font-weight="700" font-size="9" fill="#fff" text-anchor="middle">W</text></svg>
     <div>
       <h1>Wordフォーマット自動作成</h1>
       <span class="sub">対戦名・チーム情報を差し込んで Word を一括生成</span>
     </div>
     <button class="btn ghost" id="resetAll" style="margin-left:auto">すべてリセット</button>
+    <a class="backlink" href="https://kofa-portal.pages.dev/">← ポータルへ</a>
     <!-- build v56 · 2026-06-20 -->
   </div>
   <div id="status"></div>
@@ -858,6 +853,33 @@ document.querySelectorAll('.tab').forEach(function(t){
 .mbot{display:flex;gap:12px;margin-top:10px}
 .mbot .mfield{flex:1 1 0;min-width:0}
 .mbot .mfield input, .mbot .mfield select{width:100%}
+
+  /* ===== kofa シリーズ共通 v1（2026-10-01・5サイト共通の見た目の決まり） ===== */
+  /* 道具の色(--tool)は「上の帯・アイコン・番号の丸・主ボタン/選択中タブ」だけ。文字は 22/16/14/13、角の丸みは 8/12/丸 */
+  .backlink{ margin-left:auto; align-self:center; flex:0 0 auto; font-size:13px; color:#475569; text-decoration:none; background:#fff; border:1px solid #e2e8f0; border-radius:999px; padding:5px 12px; white-space:nowrap; }
+  .backlink:hover{ color:#0f172a; border-color:#cbd5e1; }
+  details.more{ margin-top:10px; font-size:13px; color:#475569; }
+  details.more summary{ cursor:pointer; color:#475569; }
+  details.more p{ margin:6px 0 0; line-height:1.7; }
+
+  :root{ --tool:#2b579a; --sub:#475569; --line:#e2e8f0; }
+  body{ background:#f8fafc; font-size:14px; }
+  body::before{ content:""; position:fixed; left:0; right:0; top:0; height:4px; background:var(--tool); z-index:50; }
+  .logo{ border-radius:12px; box-shadow:none; }
+  .head h1{ font-size:22px; } .head .sub{ font-size:14px; color:var(--sub); }
+  .head .backlink{ margin-left:8px; }
+  .card{ border-radius:12px; box-shadow:none; } .card h2{ font-size:16px; }
+  .step,.mnum{ background:var(--tool); box-shadow:none; border-radius:50%; }
+  .btn.primary{ background:var(--tool); box-shadow:none; } .btn.primary:hover{ filter:none; transform:none; background:#234a85; }
+  .btn.outline{ border-width:1px; }
+  .tab{ font-size:14px; } .tab.active{ background:var(--tool); box-shadow:none; }
+  .hint,summary,#log,.note,#status{ font-size:13px; }
+  .fld label,th,.dup,.swp,.tpl .tag,.btn.sm,.ver,.row-num{ font-size:13px; }
+  .btn,.btn.big,.btn.sm,input,select,textarea,.tpl,.dup,.swp,code{ border-radius:8px; }
+  .drop,.note,.mcard,.teamwrap{ border-radius:12px; }
+  .drop,.mcard,.tpl{ background:#fff; } input,select,textarea{ border-color:#d7dce6; }
+  .btn.ghost,.dup,.swp{ color:#475569; } .head h1{ color:#1e293b; }
+  .btn,.btn.big,.tab,.x,#genFolder{ font-size:14px; } .btn.sm,.btn.ghost{ font-size:13px; }
 </style>
 <script>
 /* ファイル名（共通）のプリセットに「カスタム」を追加（値なし＝自由入力） */
