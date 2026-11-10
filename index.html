@@ -157,9 +157,27 @@
   <div class="tabs">
     <button class="tab active" data-tab="make">フォーマット作成</button>
     <button class="tab" data-tab="teams">チーム一覧</button>
-    <button class="tab" data-tab="ph">プレースホルダ</button>
   </div>
   <div id="tab-make" class="tabpane">
+
+  <details class="howtobox">
+    <summary><span class="qi">?</span>使い方（手順・差し込み記号）<span class="arr">▶</span></summary>
+    <ul class="howto">
+      <li><b>①</b> 元にするWord（.docx）の本文に、下の差し込み記号を書いておく</li>
+      <li><b>②</b> そのWordをここに読み込む（複数可。2つ以上なら対戦ごとに使い分けられる）</li>
+      <li><b>③</b> 必要ならチーム情報・スタジアム情報のWordも読み込む（任意）。チーム情報はファイル名をチーム名に、スタジアム情報はファイル名をスタジアム名にしておくと自動で照合される</li>
+      <li><b>④</b> 共通設定と対戦を入れる。<b>大会名を先に選ぶ</b>と、チーム欄がそのリーグのチームだけに絞られる（「カスタム」なら自由入力）</li>
+      <li><b>⑤</b> 「▶ 実行」→ ZIP・フォルダ保存・1ファイルずつ、のどれかで保存</li>
+    </ul>
+    <table class="phtable">
+      <tr><td><code>{{HOME_TEAM}}</code></td><td>ホームチーム名</td><td><code>{{AWAY_TEAM}}</code></td><td>アウェイチーム名</td></tr>
+      <tr><td><code>{{SEASON}}</code></td><td>シーズン（例：2026/27）</td><td><code>{{COMPETITION}}</code></td><td>大会名</td></tr>
+      <tr><td><code>{{MATCHDAY}}</code></td><td>節（例：第5節）</td><td></td><td></td></tr>
+      <tr><td><code>{{HOME_INFO}}</code></td><td>ホームのチーム情報を差し込む位置（その行がチーム情報.docx まるごとに置き換わる）</td><td><code>{{AWAY_INFO}}</code></td><td>アウェイのチーム情報を差し込む位置</td></tr>
+      <tr><td><code>{{HOME_STADIUM_INFO}}</code></td><td>ホームのスタジアム情報を差し込む位置</td><td><code>{{AWAY_STADIUM_INFO}}</code></td><td>アウェイのスタジアム情報を差し込む位置</td></tr>
+    </table>
+    <p class="hint">ファイル名の自由入力にも {{HOME_TEAM}} などの記号が使えます（.docx は自動で付きます）。</p>
+  </details>
 
   <div class="card">
     <h2><span class="step">1</span> フォーマットベースを読み込む（.docx・複数可）</h2>
@@ -183,16 +201,14 @@
         <select id="cmnComp"></select>
         <input id="cmnCompCustom" placeholder="大会名を入力" style="display:none;margin-top:6px">
       </div>
-      <div class="fld"><label>第●節</label><input id="cmnMatchday" placeholder="第●節 / MD● / 準々決勝1stleg"></div>
+      <div class="fld"><label>節</label><div class="mdrow">第<input id="cmnMatchday" inputmode="numeric" value="5" aria-label="節の数字">節</div></div>
     </div>
-    <p class="hint">大会名を選ぶと、下の対戦リストのホーム/アウェイ欄がそのリーグの登録チームだけに絞られます。チームの所属リーグは「チーム一覧」タブの共有シートで設定してください。「カスタム」を選んだ場合はチーム名を自由入力できます。</p>
   </div>
 
   <div class="card">
     <h2><span class="step">3</span> チーム情報ファイルを読み込む（任意・.docx・複数可）</h2>
     <div class="drop" id="dropInfo">
-      ここにクラブごとの <b>チーム情報.docx</b> をドラッグ＆ドロップ（複数可）<br>
-      <span class="hint">ファイル名をチーム名にしておく → 入力したチーム名と自動で照合</span>
+      ここにクラブごとの <b>チーム情報.docx</b> をドラッグ＆ドロップ（複数可）
       <input type="file" id="infoInput" accept=".docx" multiple hidden>
     </div>
     <div class="tpl-list" id="infoList"></div>
@@ -201,18 +217,17 @@
   <div class="card">
     <h2><span class="step">4</span> スタジアム情報ファイルを読み込む（任意・.docx・複数可）</h2>
     <div class="drop" id="dropStad">
-      ここに <b>スタジアム名.docx</b> をドラッグ＆ドロップ（複数可）<br>
-      <span class="hint">各チーム名 →（teams シート参照）→ ホームスタジアム名 で自動照合（ホーム／アウェイ両方に対応）</span>
+      ここに <b>スタジアム名.docx</b> をドラッグ＆ドロップ（複数可）
       <input type="file" id="stadInput" accept=".docx" multiple hidden>
     </div>
     <div class="tpl-list" id="stadList"></div>
   </div>
 
   <div class="card">
-    <h2><span class="step">5</span> ファイル名（共通）</h2>
-    <div style="display:grid;grid-template-columns:minmax(180px,240px) 1fr;gap:12px;align-items:end">
-      <div class="fld"><label>オプションから選ぶ</label><select id="fnPreset"></select></div>
-      <div class="fld"><label>各ファイル名の書式</label><input id="fnPattern" value="{{HOME_TEAM}}対{{AWAY_TEAM}}"></div>
+    <h2><span class="step">5</span> ファイル名</h2>
+    <div class="fnrow">
+      <select id="fnPreset"></select>
+      <input id="fnPattern" value="{{HOME_TEAM}}対{{AWAY_TEAM}}" style="display:none" placeholder="例：{{HOME_TEAM}}対{{AWAY_TEAM}}">
     </div>
   </div>
 
@@ -238,11 +253,15 @@
   </div>
 
   <div class="card">
-    <h2><span class="step">7</span> 生成する<button class="btn ghost sm" id="resetGen" style="margin-left:auto" title="結果の表示だけを消します。上の設定と対戦リストは残ります">クリア</button></h2>
-    <div class="savebar">
-      <button class="btn primary big" id="genFolder">フォルダを選んで個別に保存</button>
-      <button class="btn outline big" id="genZip">ZIPにまとめて保存</button>
-    </div>
+    <h2><span class="step">7</span> 実行</h2>
+    <button class="btn primary big" id="runGen">▶ 実行</button>
+  </div>
+
+  <div class="card">
+    <h2><span class="step">8</span> 結果（ダウンロード）<button class="btn ghost sm" id="resetGen" style="margin-left:auto" title="結果の表示だけを消します。上の設定と対戦リストは残ります">クリア</button></h2>
+    <p class="empty" id="resultEmpty">「▶ 実行」を押すと、ここに保存ボタンが出ます。</p>
+    <div id="zipArea"></div>
+    <div id="dlArea" class="dl"></div>
     <div id="log"></div>
   </div>
   </div>
@@ -250,7 +269,7 @@
   <div id="tab-teams" class="tabpane" hidden>
     <div class="card">
       <h2>チーム一覧（共有シート）</h2>
-      <p class="hint">この一覧は共有スプレッドシートから読み込まれます。対戦リストのチーム名が「チーム名」または「別表記」と一致すると、スタジアム情報の自動照合に使われます。追加・修正は「共有シートを開いて編集」から行ってください。<br>「所属リーグ」列に <code>プレミアリーグ</code> <code>ラ・リーガ</code> <code>エールディヴィジ</code> のいずれかを書くと、共通設定で大会名を選んだときに対戦リストのチーム欄がそのリーグだけに絞られます。</p>
+      <p class="hint">共有シートの内容です（直すときはシートで）。スタジアム情報の照合はここのチーム名・別表記を使います。<br>「所属リーグ」列に書いたリーグで、対戦リストのチーム欄が絞られます。</p>
       <div class="teams-tools">
         <a class="btn ghost" href="https://docs.google.com/spreadsheets/d/1USqNCDdUBc2hJfv4Vw5JuORWfUF6kitjEasfvelm6MQ/edit?gid=0#gid=0" target="_blank" rel="noopener">共有シートを開いて編集</a>
         <input id="teamSearch" placeholder="🔍 チーム名・所属リーグ・別表記・国・都市・スタジアムで検索" style="flex:1;min-width:240px">
@@ -262,29 +281,6 @@
     </div>
   </div>
 
-  <div id="tab-ph" class="tabpane" hidden>
-    <div class="card">
-      <h2>差し込みプレースホルダ</h2>
-      <p class="hint">フォーマットベースの本文に次の記法を書いておくと、生成時に自動で置き換わります。<b>「ファイル名（共通）」欄にも同じトークンが使えます</b>（拡張子 <code>.docx</code> は自動付与）。</p>
-      <table class="phtable">
-        <tr><td><code>{{HOME_TEAM}}</code></td><td>ホームチーム名</td></tr>
-        <tr><td><code>{{AWAY_TEAM}}</code></td><td>アウェイチーム名</td></tr>
-        <tr><td><code>{{SEASON}}</code></td><td>シーズン（共通設定で入力／例：26/27・2026/27・2026-2027）</td></tr>
-        <tr><td><code>{{COMPETITION}}</code></td><td>大会名（共通設定で入力／例：プレミアリーグ・ラ・リーガ・UEFAチャンピオンズリーグ）</td></tr>
-        <tr><td><code>{{MATCHDAY}}</code></td><td>節・ラウンド（共通設定で入力／例：第●節・MD●・準々決勝1stleg・準決勝2ndleg）</td></tr>
-      </table>
-    </div>
-    <div class="card">
-      <h2>チーム情報の埋め込み</h2>
-      <p class="hint">フォーマットベースに、チーム情報を入れたい位置の目印として次の行を入れておきます。生成時にその行が、該当クラブの「チーム情報.docx」まるごとに置き換わります（画像・表・書式そのまま）。</p>
-      <table class="phtable">
-        <tr><td><code>{{HOME_INFO}}</code></td><td>ホームのチーム情報を差し込む位置</td></tr>
-        <tr><td><code>{{AWAY_INFO}}</code></td><td>アウェイのチーム情報を差し込む位置</td></tr>
-        <tr><td><code>{{HOME_STADIUM_INFO}}</code></td><td>ホームチームのスタジアム情報を差し込む位置（チーム名→teamsシート→スタジアム名で自動照合）</td></tr>
-        <tr><td><code>{{AWAY_STADIUM_INFO}}</code></td><td>アウェイチームのスタジアム情報を差し込む位置（チーム名→teamsシート→スタジアム名で自動照合）</td></tr>
-      </table>
-    </div>
-  </div>
 </div>
 
 <script>
@@ -353,6 +349,8 @@ function refreshTplSelects(){
     sel.innerHTML=tplOptions(cur);
   });
   $('#bulkTpl').innerHTML=tplOptions(templates[0]&&templates[0].id);
+  // テンプレートの選択欄は、2つ以上読み込んだときだけ見せる（1つなら選ぶ必要がない）
+  document.body.classList.toggle('multi-tpl', templates.length>1);
 }
 
 /* ---------- team info files ---------- */
@@ -525,10 +523,10 @@ function addRow(home='',away='',tplId,fnSel='',fnText='',use2=false,afterTr=null
       <div class="mteam">${teamFieldHTML('home',home)}</div>
       <span class="mvs">対</span>
       <div class="mteam">${teamFieldHTML('away',away)}</div>
+      <div class="mfield mtpl"><label>テンプレート</label><select class="rowtpl">${tplOptions(tplId||(templates[0]&&templates[0].id))}</select></div>
       <div class="mbtns"><button class="dup" title="この対戦を複製">複製</button><button class="x" title="削除">✕</button></div>
     </div>
     <div class="mbot">
-      <div class="mfield mtpl"><label>使用テンプレート</label><select class="rowtpl">${tplOptions(tplId||(templates[0]&&templates[0].id))}</select></div>
       <div class="mfield mstad2"><label>スタジアム</label><label class="mcheck" title="①②の両方が読み込まれているとき、この対戦は②を優先します"><input type="checkbox" class="rowstad2" ${use2?'checked':''}>②を使う</label></div>
       <div class="mfield mfile"><label>ファイル名</label><div class="mfilewrap"><select class="rowfn">${fnRowOptions(fnSel)}</select><input class="rowfnText" placeholder="このファイルだけの名前" value="${esc(fnText)}" style="${fnSel==='__custom__'?'':'display:none;'}"></div></div>
     </div>`;
@@ -554,12 +552,12 @@ $('#clearRows').onclick=()=>{ $('#rows').innerHTML=''; addRow(); };
 $('#resetAll').onclick=()=>{
   if(!confirm('入力した内容（共通設定・ファイル名の書式・対戦リスト）をすべてリセットします。よろしいですか？\n※読み込んだフォーマットベース／チーム情報／スタジアム情報のファイルは残ります。')) return;
   resetCommonSelects();
-  const md=$('#cmnMatchday'); if(md) md.value='';
+  const md=$('#cmnMatchday'); if(md) md.value='5';
   const fp=$('#fnPattern'); if(fp) fp.value='{{HOME_TEAM}}対{{AWAY_TEAM}}';
-  const fpre=$('#fnPreset'); if(fpre) fpre.value='';
+  syncFnPreset();
   const bulk=$('#bulk'); if(bulk) bulk.value='';
   $('#rows').innerHTML=''; addRow();
-  clearGenLog();
+  clearResults();
 };
 
 $('#bulkAdd').onclick=()=>{
@@ -618,15 +616,17 @@ function verifyOnlyPlaceholders(tplBytes, outBytes, r, cm){
   return {ok:false, reason:'固定文に想定外の差分（…'+seg+'…付近）'};
 }
 
-async function generate(saveMode){
-  clearGenLog();
+async function generate(){
+  clearResults();
   if(typeof PizZip==='undefined'||typeof docxtemplater==='undefined'){
     log('内蔵ライブラリの読み込みに失敗しました。ファイルを開き直してください。','err'); return;
   }
   if(!templates.length){ log('先にフォーマットベース(.docx)を読み込んでください','err'); return; }
   const dStart='{{', dEnd='}}';
   const defaultPattern=$('#fnPattern').value||'{{HOME_TEAM}}対{{AWAY_TEAM}}';
-  const cm={ season:getSeasonValue(), comp:getCompValue(), matchday:($('#cmnMatchday').value||'').trim() };
+  // 節の欄は数字だけ。「第」「節」はここで付ける（空欄なら何も入れない）
+  const mdNum=($('#cmnMatchday').value||'').trim();
+  const cm={ season:getSeasonValue(), comp:getCompValue(), matchday: mdNum ? '第'+mdNum+'節' : '' };
   const rows=[...document.querySelectorAll('#rows .mcard')].map(tr=>({
     home:tr.querySelector('.home').value.trim(),
     away:tr.querySelector('.away').value.trim(),
@@ -677,20 +677,44 @@ async function generate(saveMode){
       log(`✘ ${r.home}対${r.away}（${tpl.name}）：${msg}`,'err');
     }
   }
-  if(out.length){
-    try{ await saveOutputs(uniqueNames(out), saveMode); }
-    catch(err){
-      if(err&&err.name==='AbortError'){ log('保存をキャンセルしました','wn'); }
-      else{ log('保存先指定に失敗したため、ダウンロードに切り替えます','wn'); downloadOutputs(uniqueNames(out)); }
-    }
-  }
+  if(out.length) showResults(uniqueNames(out));
   log(`\n完了：${ok}/${rows.length} 件`, ok===rows.length?'ok':'wn');
   setGenDisabled(false);
 }
-function setGenDisabled(d){ const a=$('#genFolder'),b=$('#genZip'); if(a)a.disabled=d; if(b)b.disabled=d; }
-$('#genFolder').onclick=()=>generate('folder');
-$('#genZip').onclick=()=>generate('zip');
-$('#resetGen').onclick=()=>{ clearGenLog(); setGenDisabled(false); };
+function setGenDisabled(d){ const a=$('#runGen'); if(a){ a.disabled=d; a.textContent=d?'処理中…':'▶ 実行'; } }
+$('#runGen').onclick=()=>generate();
+$('#resetGen').onclick=()=>{ clearResults(); setGenDisabled(false); };
+
+/* ---------- 結果欄：「ZIP」「フォルダにまとめて保存」「1ファイルずつ」を並べる（Excel版と同じ形） ---------- */
+let resultUrls=[];
+function clearResults(){
+  resultUrls.forEach(u=>URL.revokeObjectURL(u)); resultUrls=[];
+  $('#zipArea').innerHTML=''; $('#dlArea').innerHTML=''; clearGenLog();
+  $('#resultEmpty').style.display='';
+}
+function blobLink(blob,name,label,cls){ const a=document.createElement('a'); const u=URL.createObjectURL(blob); resultUrls.push(u); a.href=u; a.download=name; a.textContent=label; if(cls) a.className=cls; return a; }
+function showResults(files){
+  $('#resultEmpty').style.display='none';
+  if(files.length>1){
+    const z=new PizZip(); files.forEach(f=>z.file(f.fname,f.data));
+    const blob=z.generate({type:'blob',mimeType:'application/zip'});
+    $('#zipArea').appendChild(blobLink(blob,'Wordフォーマット_'+stamp()+'.zip','⬇ ZIPでまとめてダウンロード（'+files.length+'ファイル）','zipbtn'));
+  }
+  if(window.showDirectoryPicker){
+    const fb=document.createElement('button'); fb.className='folderbtn';
+    fb.textContent='📁 フォルダにまとめて保存（'+files.length+'ファイル）';
+    fb.onclick=async()=>{
+      let dir; try{ dir=await window.showDirectoryPicker({mode:'readwrite'}); }catch(e){ return; }
+      try{
+        for(const f of files){ const fh=await dir.getFileHandle(f.fname,{create:true}); const w=await fh.createWritable(); await w.write(f.data); await w.close(); }
+        log('\u{1F4BE} 選んだフォルダに '+files.length+' 件を保存しました','ok');
+      }catch(err){ log('フォルダ保存エラー：'+((err&&err.message)||err),'err'); }
+    };
+    $('#zipArea').appendChild(fb);
+  }
+  if(files.length>1){ const lab=document.createElement('div'); lab.className='dl-label'; lab.textContent='1ファイルずつダウンロード：'; $('#dlArea').appendChild(lab); }
+  files.forEach(f=>$('#dlArea').appendChild(blobLink(new Blob([f.data],{type:DOCX_MIME}),f.fname,'⬇ '+f.fname)));
+}
 
 /* ---------- altChunk 埋め込み ---------- */
 function altChunkMerge(baseBytes, inserts){
@@ -806,15 +830,22 @@ initCommonSelects();
 addRow();
 
 /* ---------- ファイル名プリセットの初期化 ---------- */
+// 選択肢1つ（標準／前日分／当日分／自由入力）。自由入力を選んだときだけ入力欄を出す
+const FN_CUSTOM='__fncustom__';
+function syncFnPreset(){
+  const sel=document.getElementById('fnPreset'), pat=document.getElementById('fnPattern'); if(!sel||!pat) return;
+  const m=FN_PRESETS.find(p=>p.value===pat.value);
+  sel.value=m?m.value:FN_CUSTOM; pat.style.display=m?'none':'';
+}
 (function(){
-  const sel=document.getElementById('fnPreset'); const pat=document.getElementById('fnPattern'); if(!sel) return;
-  sel.innerHTML='<option value="">オプションから選ぶ…</option>'+FN_PRESETS.map(p=>`<option value="${esc(p.value)}">${esc(p.label)}</option>`).join('');
-  // オプション選択で書式を反映し、選択状態を保持する
-  sel.addEventListener('change',()=>{ if(sel.value && pat){ pat.value=sel.value; } });
-  // 書式を手入力で変えたら、一致するオプションに追従（無ければ「オプションから選ぶ…」に戻す）
-  if(pat) pat.addEventListener('input',()=>{ const m=FN_PRESETS.find(p=>p.value===pat.value); sel.value=m?m.value:''; });
-  // 起動時、初期書式がプリセットと一致していれば選択に反映
-  if(pat){ const m=FN_PRESETS.find(p=>p.value===pat.value); if(m) sel.value=m.value; }
+  const sel=document.getElementById('fnPreset'); const pat=document.getElementById('fnPattern'); if(!sel||!pat) return;
+  sel.innerHTML=FN_PRESETS.map(p=>`<option value="${esc(p.value)}">${esc(p.label+'　'+p.value)}</option>`).join('')
+    +`<option value="${FN_CUSTOM}">自由入力…</option>`;
+  sel.addEventListener('change',()=>{
+    if(sel.value===FN_CUSTOM){ pat.style.display=''; pat.focus(); return; }
+    pat.value=sel.value; pat.style.display='none';
+  });
+  syncFnPreset();
 })();
 
 /* ---------- Service Worker 登録（PWA・http/https時のみ） ---------- */
@@ -849,10 +880,49 @@ document.querySelectorAll('.tab').forEach(function(t){
 .mtop > .mteam input,.mtop > .mteam select{width:100%}
 .mtop > .mvs{padding-bottom:9px;font-weight:700;color:#64748b;flex:0 0 auto}
 .mtop > .mnum{align-self:flex-end;margin-bottom:6px}
-.mtop > .mbtns{align-self:flex-end;display:flex;gap:8px;padding-bottom:2px}
-.mbot{display:flex;gap:12px;margin-top:10px}
-.mbot .mfield{flex:1 1 0;min-width:0}
-.mbot .mfield input, .mbot .mfield select{width:100%}
+.mtop > .mbtns{align-self:flex-end;display:flex;gap:8px;padding-bottom:2px;margin-left:0}
+/* 1試合＝横一列。テンプレート欄は2つ以上読み込んだときだけ。下段は中身が全部隠れているので消す */
+.mbot{display:none}
+.mtop > .mtpl{display:none;flex:0 1 200px;min-width:0}
+body.multi-tpl .mtop > .mtpl{display:flex}
+.mtop > .mtpl label{font-size:12px;font-weight:700;color:#475569}
+.mcard{padding:10px 12px} .matchlist{gap:8px}
+@media(max-width:680px){ .mtop{flex-wrap:wrap} .mtop > .mteam{flex:1 1 140px} }
+/* 節：「第 [数字] 節」の形 */
+.mdrow{display:flex;align-items:center;gap:8px;font-size:15px;font-weight:700;color:#0f172a}
+.mdrow input#cmnMatchday{width:5em;text-align:center}
+/* ファイル名：選択肢1つ＋自由入力のときだけ入力欄 */
+.fnrow{display:flex;flex-wrap:wrap;gap:10px}
+.fnrow select{flex:0 1 auto;width:auto;max-width:100%}
+.fnrow input{flex:1 1 280px;width:auto}
+/* 「? 使い方」（Excel版と同じ見た目） */
+details.howtobox{ margin:0 0 16px; }
+details.howtobox summary{ cursor:pointer; list-style:none; display:inline-flex; align-items:center; gap:8px; color:#0f172a; font-size:14px; font-weight:700; background:#fff; border:1px solid #cbd5e1; border-radius:999px; padding:6px 14px 6px 10px; }
+details.howtobox summary::-webkit-details-marker{ display:none; }
+details.howtobox summary:hover{ border-color:#94a3b8; background:#f8fafc; color:#0f172a; }
+details.howtobox summary .qi{ display:inline-flex; align-items:center; justify-content:center; width:20px; height:20px; border-radius:50%; background:#0f172a; color:#fff; font-size:12px; font-weight:800; }
+details.howtobox summary .arr{ color:#475569; font-size:11px; transition:transform .15s; }
+details.howtobox[open] summary .arr{ transform:rotate(90deg); }
+details.howtobox[open] summary{ margin-bottom:10px; }
+ul.howto{ margin:0 0 10px; padding:12px 16px 12px 34px; border:1px solid #e2e8f0; border-radius:12px; background:#fff; font-size:14px; line-height:1.7; color:#0f172a; }
+details.howtobox .phtable{ background:#fff; border:1px solid #e2e8f0; border-radius:12px; border-spacing:0 4px; }
+/* 狭い画面では記号表を2列（記号｜説明）に折り返す */
+@media(max-width:680px){
+  details.howtobox .phtable, details.howtobox .phtable tbody{ display:block; }
+  details.howtobox .phtable tr{ display:grid; grid-template-columns:auto 1fr; gap:4px 8px; padding:4px 0; }
+  details.howtobox .phtable td{ width:auto !important; padding:2px 8px; white-space:normal; }
+  details.howtobox .phtable td:empty{ display:none; }
+}
+/* 実行と結果 */
+.dl{ display:flex; flex-wrap:wrap; gap:8px; margin:2px 0 6px; }
+.dl a{ text-decoration:none; background:#eef3fb; color:#2b579a; border:1px solid #cfe0f5; padding:9px 13px; border-radius:8px; font-size:14px; font-weight:600; }
+.dl a:hover{ background:#e1ebf8; }
+.dl-label{ width:100%; font-size:13px; color:#475569; font-weight:600; }
+.zipbtn{ display:inline-flex; align-items:center; gap:8px; text-decoration:none; background:#2b579a; color:#fff; font-weight:700; font-size:14px; padding:12px 20px; border-radius:8px; margin:4px 10px 14px 0; }
+.zipbtn:hover{ background:#234a85; }
+.folderbtn{ display:inline-flex; align-items:center; gap:8px; background:#fff; color:#2b579a; border:2px solid #2b579a; font-weight:700; font-size:14px; padding:10px 18px; border-radius:8px; cursor:pointer; margin:4px 10px 14px 0; font-family:inherit; }
+.folderbtn:hover{ background:#eef3fb; }
+.empty{ color:#475569; font-size:13px; margin:0; }
 
   /* ===== kofa シリーズ共通 v1（2026-10-01・5サイト共通の見た目の決まり） ===== */
   /* 道具の色(--tool)は「上の帯・アイコン・番号の丸・主ボタン/選択中タブ」だけ。文字は 22/16/14/13、角の丸みは 8/12/丸 */
@@ -879,24 +949,5 @@ document.querySelectorAll('.tab').forEach(function(t){
   .drop,.note,.mcard,.teamwrap{ border-radius:12px; }
   .drop,.mcard,.tpl{ background:#fff; } input,select,textarea{ border-color:#d7dce6; }
   .btn.ghost,.dup,.swp{ color:#475569; } .head h1{ color:#1e293b; }
-  .btn,.btn.big,.tab,.x,#genFolder{ font-size:14px; } .btn.sm,.btn.ghost{ font-size:13px; }
+  .btn,.btn.big,.tab,.x,#runGen{ font-size:14px; } .btn.sm,.btn.ghost{ font-size:13px; }
 </style>
-<script>
-/* ファイル名（共通）のプリセットに「カスタム」を追加（値なし＝自由入力） */
-(function(){
-  function addCustom(){
-    var ps = document.getElementById('fnPreset');
-    if (!ps) return;
-    for (var i = 0; i < ps.options.length; i++) {
-      if (ps.options[i].textContent.indexOf('カスタム') >= 0) return;
-    }
-    var o = document.createElement('option');
-    o.value = ''; o.textContent = '✏ カスタム…';
-    ps.appendChild(o);
-  }
-  addCustom();
-  document.addEventListener('DOMContentLoaded', addCustom);
-  var ps = document.getElementById('fnPreset');
-  if (ps && window.MutationObserver) new MutationObserver(addCustom).observe(ps, {childList: true});
-})();
-</script>
